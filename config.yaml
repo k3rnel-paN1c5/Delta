@@ -1,0 +1,16 @@
+# distill_config.yaml
+model:
+  teacher: "LiheYoung/distill-any-depth"
+  student: "LiheYoung/depth-anything-small-v2"
+
+distiller:
+  type: "SimpleDistiller"
+  forward_proc_func_dict: "forward_kd"
+  temperature: 4.0  # Soften teacher outputs
+  alpha: 0.7        # Weight for distillation loss (vs. 0.3 for student's own predictions)
+
+training:
+  optimizer: "AdamW"
+  lr: 3e-4
+  epochs: 100
+  device: "cuda"
