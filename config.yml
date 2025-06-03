@@ -25,6 +25,8 @@ data:
           std: [0.229, 0.224, 0.225]
 
 distillation:
+  forward_proc:
+    name: "default_forward"
   loss:
     - name: "mse"  # Mean Squared Error for depth regression
       weight: 0.7
