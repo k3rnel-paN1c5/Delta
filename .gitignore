@@ -14,7 +14,7 @@ dist/
 downloads/
 eggs/
 .eggs/
-lib/
+
 lib64/
 parts/
 sdist/
@@ -174,3 +174,87 @@ cython_debug/
 .pypirc
 
 .DS_Store
+
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+*.egg-info/
+.pytest_cache/
+
+# Machine Learning
+# Trained model weights and checkpoints - only keep the best ones or commit specific versions
+# If you only want to commit final best models, you can ignore all checkpoints:
+model/weights/*.pth
+model/weights/*.ckpt
+model/weights/*.h5
+model/weights/*.tf
+
+# Exported models - typically committed for the app, but ignore intermediate ones
+# If you only commit the final quantized .tflite, you might ignore others here:
+# model/export/depth_model.onnx
+# model/export/depth_model.tflite
+# model/export/depth_model_quantized.tflite # This one is often committed
+
+# Jupyter Notebooks
+.ipynb_checkpoints/
+*.ipynb_checkpoints/
+*.bak
+*.py~
+*.log
+
+# Data
+# Raw data - often too large to commit. Provide download instructions instead.
+data/raw/
+
+# Processed data - can also be large, consider ignoring if generated from raw
+data/processed/
+
+# macOS
+.DS_Store
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# IDEs
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Flutter / Dart
+.dart_tool/
+.flutter-plugins-dependencies
+.packages
+.ios/
+.android/
+build/
+*.iml
+pubspec.lock # Often committed, but can be ignored if you prefer to regenerate
+# For Flutter, you generally want to commit `pubspec.lock` for consistent builds.
+# However, if you have specific reasons to ignore it, uncomment the line above.
+
+# Logs and temporary files
+*.log
+*.tmp
+*.temp
+temp/
+
+# Environment variables
+.env
+.flaskenv
+
+# Other
+coverage/
+dist/
+*.zip
+*.tar.gz
+*.rar
+*.7z
