@@ -50,7 +50,7 @@ The project follows these steps:
 ### Installation
 1.  Clone the repository:
     ```bash
-    git clone [https://github.com/k3rnel-paN1c5/deep-vision.git](https://github.com/k3rnel-paN1c5/deep-vision.git)
+    git clone [https://github.com/k3rnel-paN1c5/Delta.git](https://github.com/k3rnel-paN1c5/Delta.git)
     cd deep-vision
     ```
 
