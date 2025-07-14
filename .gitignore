@@ -201,6 +201,10 @@ model/weights/*.tf
 # model/export/depth_model.tflite
 # model/export/depth_model_quantized.tflite # This one is often committed
 
+/checkpoints/
+/export/
+/pretrained_models/ 
+
 # Jupyter Notebooks
 .ipynb_checkpoints/
 *.ipynb_checkpoints/
