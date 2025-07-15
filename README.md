@@ -44,8 +44,8 @@ The project follows these steps:
 
 ### Prerequisites
 * Python 3.x
-* PyTorch or TensorFlow
-* [cite_start]A GPU-equipped workstation (e.g., NVIDIA RTX series) is recommended for training.
+* PyTorch
+* A GPU-equipped workstation (e.g., NVIDIA RTX series) is recommended for training.
 
 ### Installation
 1.  Clone the repository:
@@ -55,7 +55,9 @@ The project follows these steps:
     ```
 
 ### Training
-    todo
+    ```bash
+        todo
+    ```
 
 ### Evaluation
     todo

@@ -1,0 +1,86 @@
+{
+  "_commit_hash": "7581137eff8d4e94f6e796d3baea0e9fa79b22d2",
+  "_name_or_path": "depth-anything/Depth-Anything-V2-Large-hf",
+  "architectures": [
+    "DepthAnythingForDepthEstimation"
+  ],
+  "backbone": null,
+  "backbone_config": {
+    "architectures": [
+      "Dinov2Model"
+    ],
+    "hidden_size": 1024,
+    "image_size": 518,
+    "model_type": "dinov2",
+    "num_attention_heads": 16,
+    "num_hidden_layers": 24,
+    "out_features": [
+      "stage5",
+      "stage12",
+      "stage18",
+      "stage24"
+    ],
+    "out_indices": [
+      5,
+      12,
+      18,
+      24
+    ],
+    "patch_size": 14,
+    "reshape_hidden_states": false,
+    "stage_names": [
+      "stem",
+      "stage1",
+      "stage2",
+      "stage3",
+      "stage4",
+      "stage5",
+      "stage6",
+      "stage7",
+      "stage8",
+      "stage9",
+      "stage10",
+      "stage11",
+      "stage12",
+      "stage13",
+      "stage14",
+      "stage15",
+      "stage16",
+      "stage17",
+      "stage18",
+      "stage19",
+      "stage20",
+      "stage21",
+      "stage22",
+      "stage23",
+      "stage24"
+    ],
+    "torch_dtype": "float32"
+  },
+  "backbone_kwargs": null,
+  "depth_estimation_type": "relative",
+  "fusion_hidden_size": 256,
+  "head_hidden_size": 32,
+  "head_in_index": -1,
+  "initializer_range": 0.02,
+  "max_depth": 1,
+  "model_type": "depth_anything",
+  "neck_hidden_sizes": [
+    256,
+    512,
+    1024,
+    1024
+  ],
+  "patch_size": 14,
+  "reassemble_factors": [
+    4,
+    2,
+    1,
+    0.5
+  ],
+  "reassemble_hidden_size": 1024,
+  "torch_dtype": "float32",
+  "transformers_version": null,
+  "use_pretrained_backbone": false,
+  "use_timm_backbone": false
+}

@@ -89,6 +89,7 @@ def main():
     print("Initializing student model...")
     student_model = StudentModel().to(device)
 
+
     # --- Optimizer, Loss, and Data ---
     optimizer = optim.Adam(student_model.parameters(), lr=args.lr)
     criterion = DepthDistillationLoss(lambda_depth=0.1, lambda_si=1.0, lambda_grad=1.0, lambda_ssim=1.0)
@@ -101,6 +102,27 @@ def main():
     # --- Checkpoint Directory ---
     checkpoint_dir = 'checkpoints'
     os.makedirs(checkpoint_dir, exist_ok=True)
+
+        # --- Verify which layers are trainable ---
+    print("All parameters in student_model:")
+    for name, param in student_model.named_parameters():
+        if param.requires_grad:
+            print(f"  {name}")
+
+    print("----------------------------------------")
+    for name, param in student_model.named_parameters():
+        param.requires_grad = False
+
+    # Unfreeze parameters in the 'head' layer
+    for name, param in student_model.decoder.named_parameters():
+        param.requires_grad = True
+
+    # --- Verify which layers are trainable ---
+    print("Trainable parameters in student_model:")
+    for name, param in student_model.named_parameters():
+        if param.requires_grad:
+            print(f"  {name}")
+
 
     train_knowledge_distillation(
         teacher=teacher_model,
