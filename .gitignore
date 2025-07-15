@@ -214,10 +214,10 @@ model/pretrained_models/teacher_depth_anything/*.safetensors
 
 # Data
 # Raw data - often too large to commit. Provide download instructions instead.
-data/raw/
+model/data/raw/
 
 # Processed data - can also be large, consider ignoring if generated from raw
-data/processed/
+model/data/processed/
 
 # macOS
 .DS_Store
