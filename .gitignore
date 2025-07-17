@@ -201,9 +201,8 @@ model/pretrained_models/teacher_depth_anything/*.safetensors
 # model/export/depth_model.tflite
 # model/export/depth_model_quantized.tflite # This one is often committed
 
-/checkpoints/
-/export/
-/pretrained_models/ 
+model/checkpoints/
+model/export/
 
 # Jupyter Notebooks
 .ipynb_checkpoints/
