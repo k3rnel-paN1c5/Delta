@@ -183,7 +183,7 @@ __pycache__/
 *.pyd
 .Python
 env/
-venv/
+model/Delta/
 *.egg-info/
 .pytest_cache/
 
