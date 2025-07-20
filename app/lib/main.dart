@@ -1,10 +1,11 @@
-// main.dart
 import 'dart:io';
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:tflite_flutter/tflite_flutter.dart';
-import 'package:image/image.dart' as img_lib; // For image processing
+import 'package:image/image.dart' as img_lib;
+import 'package:logging/logging.dart';
+final Logger _logger = Logger('ModelLoader');
 
 void main() {
   runApp(const DepthEstimationApp());
@@ -20,7 +21,7 @@ class DepthEstimationApp extends StatelessWidget {
       theme: ThemeData(
         primarySwatch: Colors.blueGrey,
         visualDensity: VisualDensity.adaptivePlatformDensity,
-        fontFamily: 'Inter', // Using Inter font as per instructions
+        fontFamily: 'Inter', 
       ),
       home: const DepthEstimationHomePage(),
     );
@@ -39,11 +40,17 @@ class _DepthEstimationHomePageState extends State<DepthEstimationHomePage> {
   Uint8List? _depthMapImageBytes; // Stores the bytes of the processed depth map image
   Interpreter? _interpreter; // TensorFlow Lite interpreter
   bool _isProcessing = false; // To show loading indicator
+  double? _depthMapDisplayWidth;
+  double? _depthMapDisplayHeight;
+  String _inferenceTime = '';
 
+  static const List<double> _mean = [0.485, 0.456, 0.406];
+  static const List<double> _std = [0.229, 0.224, 0.225];
+  
   @override
   void initState() {
     super.initState();
-    // _loadModel(); // Load the TFLite model when the app starts
+    _loadModel(); // Load the TFLite model when the app starts
   }
 
   // Function to load the TensorFlow Lite model
@@ -51,12 +58,12 @@ class _DepthEstimationHomePageState extends State<DepthEstimationHomePage> {
     try {
       // Replace 'assets/depth_model.tflite' with the actual path to your model file.
       // Make sure you've added the model to your pubspec.yaml assets section.
-      _interpreter = await Interpreter.fromAsset('assets/depth_model.tflite');
-      print('Model loaded successfully!');
-      print('Input Tensors: ${_interpreter?.getInputTensors()}');
-      print('Output Tensors: ${_interpreter?.getOutputTensors()}');
+      _interpreter = await Interpreter.fromAsset('assets/Delta.tflite');
+      _logger.info('Model loaded successfully!'); // Use info level for successful operations
+      _logger.info('Input Tensors: ${_interpreter?.getInputTensors()}');
+      _logger.info('Output Tensors: ${_interpreter?.getOutputTensors()}');
     } catch (e) {
-      print('Failed to load model: $e');
+      _logger.severe('Failed to load model: $e');
       // Optionally show an error dialog to the user
       _showErrorDialog('Failed to load AI model. Please ensure the model file is correct and accessible.');
     }
@@ -70,7 +77,10 @@ class _DepthEstimationHomePageState extends State<DepthEstimationHomePage> {
     if (image != null) {
       setState(() {
         _selectedImage = File(image.path);
+        _inferenceTime = ''; // Clear previous inference time
         _depthMapImageBytes = null; // Clear previous depth map
+        _depthMapDisplayWidth = null; // Clear previous dimensions
+        _depthMapDisplayHeight = null; // Clear previous dimensions
       });
       // Automatically run depth estimation after picking an image
       _runDepthEstimation();
@@ -90,6 +100,7 @@ class _DepthEstimationHomePageState extends State<DepthEstimationHomePage> {
 
     setState(() {
       _isProcessing = true; // Start showing loading indicator
+      _inferenceTime = '';
     });
 
     try {
@@ -106,10 +117,10 @@ class _DepthEstimationHomePageState extends State<DepthEstimationHomePage> {
         setState(() { _isProcessing = false; });
         return;
       }
-
-      // Get model input shape
-      final inputShape = _interpreter!.getInputTensors()[0].shape;
-      final inputType = _interpreter!.getInputTensors()[0].type;
+      // Get model input shape and type dynamically
+      final inputTensor = _interpreter!.getInputTensors()[0];
+      final inputShape = inputTensor.shape;
+      final inputType = inputTensor.type;
 
       if (inputShape.length != 4) {
         _showErrorDialog('Unexpected model input shape. Expected [1, height, width, channels]. Got $inputShape');
@@ -127,10 +138,7 @@ class _DepthEstimationHomePageState extends State<DepthEstimationHomePage> {
         height: inputHeight,
       );
 
-      // Prepare input tensor
-      // This is a generic example. Your model might expect different normalization
-      // or data types (e.g., Float32List for float models, Int32List for int models).
-      // You need to adjust this based on your model's specific requirements.
+      
       var input = List.generate(1, (i) => List.generate(inputHeight, (j) => List.generate(inputWidth, (k) => List.filled(3, 0.0))));
 
       if (inputType == TensorType.float32) {
@@ -139,10 +147,13 @@ class _DepthEstimationHomePageState extends State<DepthEstimationHomePage> {
           return List.generate(inputHeight, (y) {
             return List.generate(inputWidth, (x) {
               final pixel = resizedImage.getPixel(x, y);
+              final r = pixel.r;
+              final g = pixel.g;
+              final b = pixel.b;
               return [
-                // img_lib.getRed(pixel) / 255.0,    // Normalize to 0-1
-                // img_lib.getGreen(pixel) / 255.0,  // Normalize to 0-1
-                // img_lib.getBlue(pixel) / 255.0,   // Normalize to 0-1
+                (r / 255.0 - _mean[0]) / _std[0],
+                (g / 255.0 - _mean[1]) / _std[1],
+                (b / 255.0 - _mean[2]) / _std[2],
               ];
             });
           });
@@ -154,9 +165,9 @@ class _DepthEstimationHomePageState extends State<DepthEstimationHomePage> {
             return List.generate(inputWidth, (x) {
               final pixel = resizedImage.getPixel(x, y);
               return [
-                // img_lib.getRed(pixel),
-                // img_lib.getGreen(pixel),
-                // img_lib.getBlue(pixel),
+                pixel.r/1.0,
+                pixel.g/1.0,
+                pixel.b/1.0,
               ];
             });
           });
@@ -177,8 +188,9 @@ class _DepthEstimationHomePageState extends State<DepthEstimationHomePage> {
         return;
       }
 
-      final outputShape = outputTensors[0].shape;
-      final outputType = outputTensors[0].type;
+      final outputTensor = outputTensors[0];
+      final outputShape = outputTensor.shape;
+      final outputType = outputTensor.type;
 
       // Initialize output buffer based on the expected output shape and type
       // This assumes a single output tensor. Adjust if your model has multiple outputs.
@@ -192,9 +204,11 @@ class _DepthEstimationHomePageState extends State<DepthEstimationHomePage> {
         setState(() { _isProcessing = false; });
         return;
       }
+      final Stopwatch stopwatch = Stopwatch()..start();
 
       _interpreter!.run(input, output);
 
+      stopwatch.stop();
       // 3. Post-process the output:
       //    - Convert the raw model output (e.g., depth values) into a visual image (e.g., grayscale depth map)
       //    - Normalize depth values to 0-255 for image display
@@ -212,32 +226,46 @@ class _DepthEstimationHomePageState extends State<DepthEstimationHomePage> {
 
         for (int y = 0; y < outputHeight; y++) {
           for (int x = 0; x < outputWidth; x++) {
-            final depthValue = output[0][y][x][0];
+            final depthValue = (output[0][y][x][0] as num).toDouble();
             if (depthValue < minDepth) minDepth = depthValue;
             if (depthValue > maxDepth) maxDepth = depthValue;
           }
         }
 
-        // final depthImage = img_lib.Image(outputWidth, outputHeight);
+        final depthImage = img_lib.Image(width: outputWidth, height:outputHeight);
         for (int y = 0; y < outputHeight; y++) {
           for (int x = 0; x < outputWidth; x++) {
-            final depthValue = output[0][y][x][0];
+            final depthValue = (output[0][y][x][0] as num).toDouble();
             // Normalize depth to 0-255 and convert to grayscale pixel
             final normalizedDepth = (depthValue - minDepth) / (maxDepth - minDepth);
             final pixelValue = (normalizedDepth * 255).round().clamp(0, 255);
-            // depthImage.setPixelRgb(x, y, pixelValue, pixelValue, pixelValue);
+            depthImage.setPixelRgb(x, y, pixelValue, pixelValue, pixelValue);
           }
         }
+        // Calculate aspect ratio and determine display dimensions
+        final double aspectRatio = outputWidth / outputHeight;
+        // You might want to cap the height or width to prevent it from being too large on small screens.
+        // For example, if you want it to take up a maximum of 80% of the screen width:
+        final double screenWidth = MediaQuery.of(context).size.width - 32; // Account for padding
+        double displayWidth = screenWidth;
+        double displayHeight = screenWidth / aspectRatio;
 
+        // Ensure the display height doesn't exceed a reasonable maximum, or adjust as needed
+        if (displayHeight > 400) { // Example max height
+          displayHeight = 400;
+          displayWidth = displayHeight * aspectRatio;
+        }
         setState(() {
-          // _depthMapImageBytes = originalImage;
-          // _depthMapImageBytes = Uint8List.fromList(img_lib.encodePng(depthImage));
+          _depthMapImageBytes = Uint8List.fromList(img_lib.encodePng(depthImage));
+          _inferenceTime = 'Inference Time: ${stopwatch.elapsedMilliseconds} ms';
+          _depthMapDisplayWidth = displayWidth;
+          _depthMapDisplayHeight = displayHeight;
         });
       } else {
         _showErrorDialog('Unexpected model output shape for depth map. Expected [1, height, width, 1]. Got $outputShape');
       }
     } catch (e) {
-      print('Error during depth estimation: $e');
+      _logger.severe('Error during depth estimation: $e');
       _showErrorDialog('An error occurred during depth estimation: $e');
     } finally {
       setState(() {
@@ -289,7 +317,7 @@ class _DepthEstimationHomePageState extends State<DepthEstimationHomePage> {
       ),
       body: SingleChildScrollView( // Allows content to scroll if it overflows
         child: Padding(
-          padding: const EdgeInsets.all(16.0),
+          padding: const EdgeInsets.all(40.0),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -299,6 +327,19 @@ class _DepthEstimationHomePageState extends State<DepthEstimationHomePage> {
                 'Original Image',
                 style: Theme.of(context).textTheme.headlineSmall,
                 textAlign: TextAlign.center,
+              ),
+               // Button to pick image
+              ElevatedButton.icon(
+                onPressed: _pickImage,
+                icon: const Icon(Icons.photo_library),
+                label: const Text('Pick Image from Gallery'),
+                style: ElevatedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(vertical: 15),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  textStyle: const TextStyle(fontSize: 18),
+                ),
               ),
               const SizedBox(height: 10),
               Container(
@@ -339,7 +380,8 @@ class _DepthEstimationHomePageState extends State<DepthEstimationHomePage> {
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(color: Colors.blueGrey.shade200),
                 ),
-                height: 300, // Fixed height for depth map display
+                width: _depthMapDisplayWidth,
+                height: _depthMapDisplayHeight,
                 alignment: Alignment.center,
                 child: _isProcessing
                     ? const CircularProgressIndicator() // Show loading indicator
@@ -358,21 +400,18 @@ class _DepthEstimationHomePageState extends State<DepthEstimationHomePage> {
                             ),
                           ),
               ),
+              if (_inferenceTime.isNotEmpty)
+                Padding( // Add padding for better spacing
+                  padding: const EdgeInsets.only(top: 10.0),
+                  child: Text(
+                    _inferenceTime,
+                    style: Theme.of(context).textTheme.titleMedium,
+                    textAlign: TextAlign.center,
+                  ),
+                ),
               const SizedBox(height: 30),
 
-              // Button to pick image
-              ElevatedButton.icon(
-                onPressed: _pickImage,
-                icon: const Icon(Icons.photo_library),
-                label: const Text('Pick Image from Gallery'),
-                style: ElevatedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(vertical: 15),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  textStyle: const TextStyle(fontSize: 18),
-                ),
-              ),
+             
               const SizedBox(height: 10),
               // Button to run estimation (optional, as it runs automatically after pick)
               // This button can be useful for re-running if needed.

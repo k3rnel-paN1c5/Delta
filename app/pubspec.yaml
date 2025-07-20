@@ -33,8 +33,9 @@ dependencies:
   
 
   image_picker: ^1.1.2 # For picking images from gallery
-  tflite_flutter: ^0.10.4 # For TensorFlow Lite model integration
-  image: ^4.2.0 # For image processing (resizing, converting to bytes)
+  tflite_flutter: ^0.11.0 # For TensorFlow Lite model integration
+  image: ^4.2.0 # For image processing (resizing, converting to bytes)s
+  logging: ^1.2.0 
 
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
@@ -63,8 +64,8 @@ flutter:
   uses-material-design: true
 
   # To add assets to your application, add an assets section, like this:
-  # assets: #todo When model is ready
-  #   - assets/depth_model.tflite 
+  assets: 
+    - assets/Delta.tflite 
   #   - images/a_dot_burr.jpeg
   #   - images/a_dot_ham.jpeg
 
