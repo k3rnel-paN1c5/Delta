@@ -261,3 +261,5 @@ dist/
 *.tar.gz
 *.rar
 *.7z
+
+app/assets/Delta.tflite
