@@ -8,12 +8,13 @@ class DepthDistillationLoss(nn.Module):
     Custom loss function for depth distillation.
     Using Pixel wise MSE Loss, SSIM, Gradient MAE Loss, and Scale-Invariant MSE Loss.
     """
-    def __init__(self, lambda_depth=1.0, lambda_si=1.0, lambda_grad=1.0, lambda_ssim=1.0, window_size=11):
+    def __init__(self, lambda_depth=0.7, lambda_si=1.0, lambda_grad=1.0, lambda_ssim=1.0, lambda_smooth=0.2, window_size=11):
         super().__init__()
-        self.lambda_depth = lambda_depth  # Weight for depth map MSE loss
-        self.lambda_si = lambda_si        # Weight for Scale-Invariant MSE loss
-        self.lambda_grad = lambda_grad    # Weight for Gradient loss
-        self.lambda_ssim = lambda_ssim    # Weight for SSIM loss
+        self.lambda_depth = lambda_depth   # Weight for depth map MSE loss
+        self.lambda_si = lambda_si         # Weight for Scale-Invariant MSE loss
+        self.lambda_grad = lambda_grad     # Weight for Gradient loss
+        self.lambda_ssim = lambda_ssim     # Weight for SSIM loss
+        self.lambda_smooth = lambda_smooth # Weight for smoothness regularizer
 
         self.mse_depth_loss = nn.MSELoss()  # Mean Squared Error for depth maps
         self.l1_loss = nn.L1Loss()          # L1 Loss for gradients
@@ -62,7 +63,13 @@ class DepthDistillationLoss(nn.Module):
             loss_grad = self.l1_loss(student_grad_x, teacher_grad_x) + self.l1_loss(student_grad_y, teacher_grad_y)
             total_loss += self.lambda_grad * loss_grad
 
-        # 4. SSIM Loss
+        # 4.Smoothness Loss (Regularizer)
+        if self.lambda_smooth > 0:
+            # Penalizes the L1 norm of the student's depth gradients
+            loss_smooth = torch.mean(student_grad_x) + torch.mean(student_grad_y)
+            total_loss += self.lambda_smooth * loss_smooth
+
+        # 5. SSIM Loss
         if self.lambda_ssim > 0:
             # Move ssim module to the same device as the tensors
             self.ssim.to(student_depth.device)
