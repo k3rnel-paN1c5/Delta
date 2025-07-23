@@ -31,7 +31,7 @@ dependencies:
   flutter:
     sdk: flutter
   
-  provider: ^6.1.5
+
   image_picker: ^1.1.2 # For picking images from gallery
   tflite_flutter: ^0.11.0 # For TensorFlow Lite model integration
   image: ^4.2.0 # For image processing (resizing, converting to bytes)s
@@ -44,7 +44,6 @@ dependencies:
 dev_dependencies:
   flutter_test:
     sdk: flutter
-  flutter_launcher_icons: "^0.13.1"
 
   # The "flutter_lints" package below contains a set of recommended lints to
   # encourage good coding practices. The lint set provided by the package is
@@ -95,11 +94,3 @@ flutter:
   #
   # For details regarding fonts from package dependencies,
   # see https://flutter.dev/to/font-from-package
-
-# Add this section at the end of your pubspec.yaml
-flutter_launcher_icons:
-  android: true   # Or specify a custom file name: "ic_launcher"
-  ios: true       # Or specify a custom file name: "AppIcon"
-  image_path: "assets/icon/icon.png" # Path to your source icon
-  min_sdk_android: 21 # Optional: For adaptive icons
-  
