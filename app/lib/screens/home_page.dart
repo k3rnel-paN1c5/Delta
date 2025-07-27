@@ -157,26 +157,27 @@ class OriginalImageView extends StatelessWidget {
     final appState = Provider.of<AppState>(context);
     return Card(
       elevation: 4,
+      clipBehavior: Clip.antiAlias, // Helps with rounding the image corners
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
       ),
       child: Container(
-        height: 300,
+        height: 384,
+        width: 384, 
         alignment: Alignment.center,
         child: appState.selectedImage == null
             ? Text(
                 'No image selected',
                 style: TextStyle(color: Colors.grey[600]),
               )
-            : ClipRRect(
-                borderRadius: BorderRadius.circular(12),
-                child: Image.file(
+            : Image.file(
                   appState.selectedImage!,
-                  fit: BoxFit.contain,
+                  fit: BoxFit.cover,
+                  width: double.infinity,
+                  height: double.infinity,
                   errorBuilder: (context, error, stackTrace) =>
                       const Text('Error loading image'),
                 ),
-              ),
       ),
     );
   }
