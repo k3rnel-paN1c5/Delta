@@ -11,11 +11,13 @@ class DepthMapView extends StatelessWidget {
     final appState = Provider.of<AppState>(context);
     return Card(
       elevation: 4,
+      clipBehavior: Clip.antiAlias, // Helps with rounding the image corners
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
       ),
       child: Container(
-        height: 300,
+        height: 384, // Changed from 300
+        width: 384,  // Added width
         alignment: Alignment.center,
         child: appState.isProcessing
             ? const CircularProgressIndicator()
@@ -30,14 +32,11 @@ class DepthMapView extends StatelessWidget {
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Expanded(
-                        child: ClipRRect(
-                          borderRadius: BorderRadius.circular(12),
-                          child: Image.memory(
-                            appState.depthMapImageBytes!,
-                            fit: BoxFit.contain,
-                            errorBuilder: (context, error, stackTrace) =>
-                                const Text('Error loading depth map'),
-                          ),
+                        child: Image.memory(
+                          appState.depthMapImageBytes!,
+                          fit: BoxFit.cover, // Changed from contain
+                          errorBuilder: (context, error, stackTrace) =>
+                              const Text('Error loading depth map'),
                         ),
                       ),
                       if (appState.inferenceTime.isNotEmpty)

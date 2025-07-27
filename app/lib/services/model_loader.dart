@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:logging/logging.dart';
 import 'package:tflite_flutter/tflite_flutter.dart';
 
@@ -7,6 +9,14 @@ class ModelLoader {
 
   Future<Interpreter?> loadModel() async {
     try {
+      final options = InterpreterOptions();
+      if (Platform.isAndroid) {
+        options.addDelegate(GpuDelegateV2());
+      }
+      else if (Platform.isIOS) {
+        options.addDelegate(GpuDelegate());
+      }
+        
       _interpreter = await Interpreter.fromAsset('assets/Delta.tflite');
       _logger.info('Model loaded successfully!');
       _logger.info('Input Tensors: ${_interpreter?.getInputTensors()}');

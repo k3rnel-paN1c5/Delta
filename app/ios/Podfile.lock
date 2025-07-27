@@ -28,6 +28,7 @@ PODS:
 DEPENDENCIES:
   - Flutter (from `Flutter`)
   - image_picker_ios (from `.symlinks/plugins/image_picker_ios/ios`)
+  - TensorFlowLiteSwift/Metal
   - tflite_flutter (from `.symlinks/plugins/tflite_flutter/ios`)
 
 SPEC REPOS:
@@ -50,6 +51,6 @@ SPEC CHECKSUMS:
   TensorFlowLiteSwift: 3a4928286e9e35bdd3e17970f48e53c80d25e793
   tflite_flutter: 64b192e11352fe36943ab6656e1d49207f1a5595
 
-PODFILE CHECKSUM: 4305caec6b40dde0ae97be1573c53de1882a07e5
+PODFILE CHECKSUM: 9a3e0e90802cb227e4bba4b85f705cd9c8ec38bb
 
 COCOAPODS: 1.16.2

@@ -25,6 +25,7 @@ android {
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk = flutter.minSdkVersion
+        minSdkVersion 22
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
@@ -41,4 +42,7 @@ android {
 
 flutter {
     source = "../.."
+}
+dependencies {
+    implementation 'org.tensorflow:tensorflow-lite-gpu:2.9.0' // Or a newer version
 }
