@@ -8,29 +8,39 @@ import '../services/model_loader.dart';
 import '../widgets/depth_map_view.dart';
 import '../widgets/estimation_button.dart';
 import '../widgets/image_picker_button.dart';
+import '../widgets/original_image_view.dart';
+import '../widgets/color_map_dropdown.dart';
 
+/// The main home page of the application.
 class DepthEstimationHomePage extends StatefulWidget {
   const DepthEstimationHomePage({super.key});
 
   @override
-  State<DepthEstimationHomePage> createState() => _DepthEstimationHomePageState();
+  State<DepthEstimationHomePage> createState() =>
+      _DepthEstimationHomePageState();
 }
 
 class _DepthEstimationHomePageState extends State<DepthEstimationHomePage> {
   final ModelLoader _modelLoader = ModelLoader();
   late final DepthEstimator _depthEstimator;
+  bool _isModelLoaded = false;
 
   @override
   void initState() {
     super.initState();
     OrtEnv.instance.init();
+    // Load the model after the first frame is rendered.
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _modelLoader.loadModel().then((session) {
         if (session != null) {
-          _depthEstimator = DepthEstimator(session);
+          setState(() {
+            _depthEstimator = DepthEstimator(session);
+            _isModelLoaded = true;
+          });
         } else if (mounted) {
           _showErrorDialog(
-              'Failed to load AI model. Please ensure the model file is correct and accessible.');
+            'Failed to load AI model. Please ensure the model file is correct and accessible.',
+          );
         }
       });
     });
@@ -53,9 +63,11 @@ class _DepthEstimationHomePageState extends State<DepthEstimationHomePage> {
         centerTitle: true,
         actions: [
           IconButton(
-            icon: Icon(appState.themeMode == ThemeMode.dark
-                ? Icons.light_mode
-                : Icons.dark_mode),
+            icon: Icon(
+              appState.themeMode == ThemeMode.dark
+                  ? Icons.light_mode
+                  : Icons.dark_mode,
+            ),
             onPressed: () => appState.toggleTheme(),
           ),
         ],
@@ -79,9 +91,7 @@ class _DepthEstimationHomePageState extends State<DepthEstimationHomePage> {
               const SizedBox(height: 16),
               const DepthMapView(),
               const SizedBox(height: 32),
-              EstimationButton(
-                onPressed: () => _runDepthEstimation(context),
-              ),
+              EstimationButton(onPressed: () => _runDepthEstimation(context)),
             ],
           ),
         ),
@@ -89,6 +99,7 @@ class _DepthEstimationHomePageState extends State<DepthEstimationHomePage> {
     );
   }
 
+  /// Helper widget to build section titles.
   Widget _buildSectionTitle(BuildContext context, String title) {
     return Text(
       title,
@@ -97,10 +108,17 @@ class _DepthEstimationHomePageState extends State<DepthEstimationHomePage> {
     );
   }
 
+  /// Runs the depth estimation process.
   void _runDepthEstimation(BuildContext context) async {
+    if (!_isModelLoaded) {
+      _showSnackbar('Model is not ready yet. Please wait.');
+      return;
+    }
+
     final appState = Provider.of<AppState>(context, listen: false);
 
     if (appState.selectedImage == null) {
+      // This check is redundant due to the button state, I am leaving it for  for safety.
       _showSnackbar('Please select an image first.');
       return;
     }
@@ -114,7 +132,8 @@ class _DepthEstimationHomePageState extends State<DepthEstimationHomePage> {
       );
       appState.setDepthMap(result['depthMap']);
       appState.setInferenceTime(
-          'Inference Time: ${result['inferenceTime']} ms');
+        'Inference Time: ${result['inferenceTime']} ms',
+      );
     } catch (e) {
       _showErrorDialog('An error occurred during depth estimation: $e');
     } finally {
@@ -122,15 +141,14 @@ class _DepthEstimationHomePageState extends State<DepthEstimationHomePage> {
     }
   }
 
+  /// Shows a snackbar with a message.
   void _showSnackbar(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        behavior: SnackBarBehavior.floating,
-      ),
+      SnackBar(content: Text(message), behavior: SnackBarBehavior.floating),
     );
   }
 
+  /// Shows an error dialog with a message.
   void _showErrorDialog(String message) {
     showDialog(
       context: context,
@@ -148,77 +166,6 @@ class _DepthEstimationHomePageState extends State<DepthEstimationHomePage> {
           ],
         );
       },
-    );
-  }
-}
-
-class OriginalImageView extends StatelessWidget {
-  const OriginalImageView({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    final appState = Provider.of<AppState>(context);
-    return Card(
-      elevation: 4,
-      clipBehavior: Clip.antiAlias, // Helps with rounding the image corners
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Container(
-        height: 384,
-        width: 384, 
-        alignment: Alignment.center,
-        child: appState.selectedImage == null
-            ? Text(
-                'No image selected',
-                style: TextStyle(color: Colors.grey[600]),
-              )
-            : Image.file(
-                  appState.selectedImage!,
-                  fit: BoxFit.cover,
-                  width: double.infinity,
-                  height: double.infinity,
-                  errorBuilder: (context, error, stackTrace) =>
-                      const Text('Error loading image'),
-                ),
-      ),
-    );
-  }
-}
-
-class ColorMapDropdown extends StatelessWidget {
-  const ColorMapDropdown({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    final appState = Provider.of<AppState>(context);
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12.0),
-      decoration: BoxDecoration(
-        color: Theme.of(context).cardColor,
-        borderRadius: BorderRadius.circular(10.0),
-        border: Border.all(
-          color: Theme.of(context).dividerColor,
-        ),
-      ),
-      child: DropdownButtonHideUnderline(
-        child: DropdownButton<String>(
-          value: appState.selectedColorMap,
-          isExpanded: true,
-          onChanged: (String? newValue) {
-            if (newValue != null) {
-              appState.setSelectedColorMap(newValue);
-            }
-          },
-          items: <String>['Grayscale', 'Viridis']
-              .map<DropdownMenuItem<String>>((String value) {
-            return DropdownMenuItem<String>(
-              value: value,
-              child: Text(value),
-            );
-          }).toList(),
-        ),
-      ),
     );
   }
 }

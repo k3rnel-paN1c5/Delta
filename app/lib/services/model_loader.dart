@@ -3,24 +3,27 @@ import 'package:flutter/services.dart';
 import 'package:logging/logging.dart';
 import 'package:onnxruntime/onnxruntime.dart';
 
+/// Loads the ONNX model from the assets.
 class ModelLoader {
   OrtSession? _session;
   final Logger _logger = Logger('ModelLoader');
 
+  /// Loads the model and returns an ONNX runtime session.
   Future<OrtSession?> loadModel() async {
     try {
       final sessionOptions = OrtSessionOptions();
-      
+
       // Enable hardware acceleration based on the platform.
       if (Platform.isIOS) {
         _logger.info("Using CoreML Execution Provider for iOS.");
-        sessionOptions.appendCoreMLProvider(CoreMLFlags.onlyEnableDeviceWithANE); 
+        sessionOptions.appendCoreMLProvider(
+          CoreMLFlags.onlyEnableDeviceWithANE,
+        );
       } else if (Platform.isAndroid) {
         _logger.info("Using NNAPI Execution Provider for Android.");
 
         sessionOptions.appendNnapiProvider(NnapiFlags.useFp16);
       }
-
 
       const assetFileName = 'assets/Delta.onnx';
       final rawAssetFile = await rootBundle.load(assetFileName);
@@ -37,6 +40,7 @@ class ModelLoader {
     }
   }
 
+  /// Releases the model resources.
   void close() {
     _session?.release();
   }
