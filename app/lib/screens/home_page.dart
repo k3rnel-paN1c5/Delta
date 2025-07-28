@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:onnxruntime/onnxruntime.dart';
 
 import '../models/app_state.dart';
 import '../services/depth_estimator.dart';
@@ -22,10 +23,11 @@ class _DepthEstimationHomePageState extends State<DepthEstimationHomePage> {
   @override
   void initState() {
     super.initState();
+    OrtEnv.instance.init();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _modelLoader.loadModel().then((interpreter) {
-        if (interpreter != null) {
-          _depthEstimator = DepthEstimator(interpreter);
+      _modelLoader.loadModel().then((session) {
+        if (session != null) {
+          _depthEstimator = DepthEstimator(session);
         } else if (mounted) {
           _showErrorDialog(
               'Failed to load AI model. Please ensure the model file is correct and accessible.');
@@ -37,6 +39,7 @@ class _DepthEstimationHomePageState extends State<DepthEstimationHomePage> {
   @override
   void dispose() {
     _modelLoader.close();
+    OrtEnv.instance.release();
     super.dispose();
   }
 

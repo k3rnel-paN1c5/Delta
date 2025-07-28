@@ -262,4 +262,97 @@ dist/
 *.rar
 *.7z
 
+# Miscellaneous
+*.class
+*.lock
+*.log
+*.pyc
+*.swp
+.DS_Store
+.atom/
+.buildlog/
+.cxx/
+.db
+.history
+.svn/
+
+# Flutter/Dart
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+.pub-cache/
+/build/
+
+# IDEs
+.idea/
+.vscode/
+*.iml
+*.ipr
+*.iws
+
+# iOS/macOS
+.symlinks/
+/ios/Flutter/App.framework
+/ios/Flutter/engine.framework
+/ios/Flutter/flutter_assets/
+/ios/Flutter/.last_build_id
+/ios/Pods/
+/ios/Runner/Assets.xcassets/AppIcon.appiconset/*
+!/ios/Runner/Assets.xcassets/AppIcon.appiconset/Contents.json
+/ios/Runner.xcworkspace/xcshareddata/
+/ios/Runner.xcworkspace/xcuserdata/
+/ios/.generated/
+*.hmap
+*.xccheckout
+
+# Android
+/android/key.properties
+/android/local.properties
+/android/app/src/main/assets/flutter_assets/
+/android/.gradle
+/android/captures/
+/android/app/build
+*.apk
+*.aab
+
+# Web
+/web/build/
+/web/dart_sdk.js
+/web/flutter.js
+/web/flutter_service_worker.js
+
+# Windows
+/windows/flutter/flutter_build.d
+/windows/flutter/flutter_plugins.h
+/windows/flutter/flutter_plugins.vcxproj
+/windows/flutter/flutter_plugins.vcxproj.filters
+/windows/flutter/flutter_windows.dll
+/windows/flutter/flutter_windows.dll.exp
+/windows/flutter/flutter_windows.dll.lib
+/windows/flutter/flutter_windows.dll.pdb
+/windows/runner/Debug/
+/windows/runner/Release/
+/windows/runner/Profile/
+/windows/runner/Generated\ Files/
+/windows/runner/flutter_assets/
+/windows/runner/project_generator.bat
+/windows/runner/Runner.exe
+/windows/runner/runner.exe.pdb
+/windows/runner/runner.exe.manifest
+.vs/
+
+# Linux
+/linux/flutter/flutter_build.d
+/linux/flutter/flutter_plugins.h
+/linux/flutter/flutter_plugins.cc
+/linux/flutter/flutter_linux.so
+/linux/my_application
+/linux/bundle/
+
+# Sensitive data
+secrets.json
+
 app/assets/*.tflite
+app/assets/*.onnx
+

@@ -1,117 +1,53 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from torchvision.models import mobilenet_v3_large, MobileNet_V3_Large_Weights
+import timm
 
-
-class StudentModel(nn.Module):
+class StudentDepthModel(nn.Module):
     """
-    Student model with MobileNetV3 encoder and a custom decoder.
-    Designed for real-time inference on edge devices.
+    Combines a MobileViT encoder with the MiniDPT decoder to form a
+    complete, end-to-end model for depth estimation.
     """
-    def __init__(self, output_channels=1):
-        super(StudentModel, self).__init__()
-        # Load MobileNetV3 Large features as the encoder
-        self.encoder = mobilenet_v3_large(weights=MobileNet_V3_Large_Weights.DEFAULT).features
-
-        # Freeze encoder parameters
-        for param in self.encoder.parameters():
-            param.requires_grad = False
-
-        # These layers refine the features from the encoder before fusion.
-        # Channel dimensions correspond to MobileNetV3 skip connection outputs.
-        self.skip_s4_conv = nn.Sequential(
-            nn.Conv2d(24, 24, kernel_size=1, bias=False),
-            nn.BatchNorm2d(24),
-            nn.ReLU(inplace=True)
-        )
-        self.skip_s8_conv = nn.Sequential(
-            nn.Conv2d(40, 40, kernel_size=1, bias=False),
-            nn.BatchNorm2d(40),
-            nn.ReLU(inplace=True)
-        )
-        self.skip_s16_conv = nn.Sequential(
-            nn.Conv2d(80, 80, kernel_size=1, bias=False),
-            nn.BatchNorm2d(80),
-            nn.ReLU(inplace=True)
-        )
-        self.skip_s32_conv = nn.Sequential(
-            nn.Conv2d(112, 112, kernel_size=1, bias=False),
-            nn.BatchNorm2d(112),
-            nn.ReLU(inplace=True)
+    def __init__(self, encoder_name='mobilevit_xs', pretrained=True):
+        super().__init__()
+        # 1. Instantiate the encoder
+        self.encoder = timm.create_model(
+            encoder_name,
+            pretrained=pretrained,
+            features_only=True, # This returns a list of feature maps
         )
 
-        # Decoder blocks (input channels remain the same as the 1x1 convs don't change channel dims)
-        self.decoder_block1 = nn.Sequential(
-            nn.Conv2d(960 + 112, 512, kernel_size=3, padding=1, bias=False),
-            nn.BatchNorm2d(512),
-            nn.ReLU(inplace=True),
-            nn.ConvTranspose2d(512, 512, kernel_size=2, stride=2)
-        )
-        self.decoder_block2 = nn.Sequential(
-            nn.Conv2d(512 + 80, 256, kernel_size=3, padding=1, bias=False),
-            nn.BatchNorm2d(256),
-            nn.ReLU(inplace=True),
-            nn.ConvTranspose2d(256, 256, kernel_size=2, stride=2)
-        )
-        self.decoder_block3 = nn.Sequential(
-            nn.Conv2d(256 + 40, 128, kernel_size=3, padding=1, bias=False),
-            nn.BatchNorm2d(128),
-            nn.ReLU(inplace=True),
-            nn.ConvTranspose2d(128, 128, kernel_size=2, stride=2)
-        )
-        self.decoder_block4 = nn.Sequential(
-            nn.Conv2d(128 + 24, 64, kernel_size=3, padding=1, bias=False),
-            nn.BatchNorm2d(64),
-            nn.ReLU(inplace=True),
-            nn.ConvTranspose2d(64, 64, kernel_size=2, stride=2)
-        )
+        self.feature_indices = [0, 1, 2, 3]
 
-        self.final_conv = nn.Conv2d(64, output_channels, kernel_size=1)
-        self.final_activation = nn.ReLU()
+        # 2. Get the channel counts from the encoder
+        dummy_input = torch.randn(1, 3, 224, 224)
+        features = self.encoder(dummy_input)
+        # encoder_channels = [f.shape[1] for f in features]
+        encoder_channels = [features[i].shape[1] for i in self.feature_indices]
 
-    def forward(self, x):
-        input_shape = x.shape[2:]
-        skip_features = {}
+        # 3. Define the decoder channel counts
+        # This can be tuned to balance performance and model size.
+        decoder_channels = [ 64, 128, 160, 256]
 
-        # --- Encoder Path & Feature Extraction ---
-        # Iterate through encoder layers to get skip connections
-        # Apply 1x1 convs immediately after extraction.
-        for i, layer in enumerate(self.encoder):
-            x = layer(x)
-            if i == 2:  # s4 (H/4, W/4 resolution, 24 channels)
-                skip_features['s4'] = self.skip_s4_conv(x)
-            elif i == 4:  # s8 (H/8, W/8 resolution, 40 channels)
-                skip_features['s8'] = self.skip_s8_conv(x)
-            elif i == 7:  # s16 (H/16, W/16 resolution, 80 channels)
-                skip_features['s16'] = self.skip_s16_conv(x)
-            elif i == 11:  # s32 (H/16, W/16 resolution, 112 channels)
-                skip_features['s32'] = self.skip_s32_conv(x)
+        # Ensure decoder channels list is the same length as encoder channels
+        if len(decoder_channels) > len(encoder_channels):
+             decoder_channels = decoder_channels[:len(encoder_channels)]
+        elif len(decoder_channels) < len(encoder_channels):
+             # You might want to handle this differently, e.g., by padding
+             raise ValueError("Decoder channels list is shorter than encoder channels list.")
 
-        # Ensure s32 matches the spatial dimension of the encoder's final output
-        if skip_features['s32'].shape[2:] != x.shape[2:]:
-            skip_features['s32'] = F.interpolate(skip_features['s32'], size=x.shape[2:], mode='bilinear', align_corners=False)
 
-        # --- Decoder Path with Enhanced Skip Connections ---
-        # Concatenate final encoder output (x) with the refined s32 skip connection
-        x = torch.cat([x, skip_features['s32']], dim=1)
-        x = self.decoder_block1(x)
+        # 4. Instantiate the decoder
+        self.decoder = MiniDPT(encoder_channels, decoder_channels)
 
-        # Concatenate with refined s16
-        x = torch.cat([x, skip_features['s16']], dim=1)
-        x = self.decoder_block2(x)
-
-        # Concatenate with refined s8
-        x = torch.cat([x, skip_features['s8']], dim=1)
-        x = self.decoder_block3(x)
-
-        # Concatenate with refined s4
-        x = torch.cat([x, skip_features['s4']], dim=1)
-        x = self.decoder_block4(x)
-
-        # Final layers
-        x = self.final_conv(x)
-        x = F.interpolate(x, size=input_shape, mode='bilinear', align_corners=False)
-        x = self.final_activation(x)
-
-        return x
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        """
+        Returns:
+            A tuple containing:
+            - The final depth map (torch.Tensor).
+            - A list of intermediate feature maps from the encoder (List[torch.Tensor]).
+        """
+        features = self.encoder(x)
+        selected_features = [features[i] for i in self.feature_indices]
+        depth_map = self.decoder(selected_features)
+        return depth_map, selected_features

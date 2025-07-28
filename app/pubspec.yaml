@@ -33,7 +33,7 @@ dependencies:
   
   provider: ^6.1.5
   image_picker: ^1.1.2 # For picking images from gallery
-  tflite_flutter: ^0.11.0 # For TensorFlow Lite model integration
+  onnxruntime: ^1.4.1 # For Running the onnx model
   image: ^4.2.0 # For image processing (resizing, converting to bytes)s
   logging: ^1.2.0 
 
@@ -66,7 +66,7 @@ flutter:
 
   # To add assets to your application, add an assets section, like this:
   assets: 
-    - assets/Delta.tflite 
+    - assets/Delta.onnx 
   #   - images/a_dot_burr.jpeg
   #   - images/a_dot_ham.jpeg
 
