@@ -26,10 +26,7 @@ class DepthEstimator {
   DepthEstimator(this._session);
 
   /// Runs the depth estimation on the given image file.
-  Future<Map<String, dynamic>> runDepthEstimation(
-    File imageFile,
-    String colorMap,
-  ) async {
+  Future<Map<String, dynamic>> runDepthEstimation(File imageFile) async {
     final imageBytes = await imageFile.readAsBytes();
     final originalImage = img_lib.decodeImage(imageBytes);
     if (originalImage == null) {
@@ -64,14 +61,14 @@ class DepthEstimator {
 
     final output = outputs?[0]?.value;
     // Output shhape : [Batch, Channel, H, W]
-    final outputShape = [1, 1, 384, 384];
+    // final outputShape = [1, 1, 384, 384];
 
     if (output == null) {
       throw Exception('Failed to get model output.');
     }
 
-    // Post-process the model's output to get the depth map.
-    final depthMapBytes = _postProcess(output, outputShape, colorMap);
+    // // Post-process the model's output to get the depth map.
+    // final depthMapBytes = _postProcess(output, outputShape, colorMap);
 
     // Release the resources.
     inputOrt.release();
@@ -79,7 +76,7 @@ class DepthEstimator {
     outputs?.forEach((element) => element?.release());
 
     return {
-      'depthMap': depthMapBytes,
+      'rawDepthMap': output,
       'inferenceTime': stopwatch.elapsedMilliseconds,
     };
   }
@@ -109,11 +106,9 @@ class DepthEstimator {
   }
 
   /// Post-processes the model's output to create a depth map image.
-  Uint8List _postProcess(
-    dynamic output,
-    List<int> outputShape,
-    String colorMap,
-  ) {
+  Uint8List applyColorMap(dynamic output, String colorMap) {
+    // Output shape : [Batch, Channel, H, W]
+    final outputShape = [1, 1, 384, 384];
     final outputHeight = outputShape[2];
     final outputWidth = outputShape[3];
 
@@ -131,7 +126,10 @@ class DepthEstimator {
       }
     }
 
-    final double depthRange = max(maxDepth - minDepth, double.minPositive); // avoid divison by 0
+    final double depthRange = max(
+      maxDepth - minDepth,
+      double.minPositive,
+    ); // avoid divison by 0
 
     final depthImage = img_lib.Image(width: outputWidth, height: outputHeight);
 

@@ -11,6 +11,7 @@ class AppState extends ChangeNotifier {
   String _inferenceTime = '';
   String _selectedColorMap = 'Grayscale';
   ThemeMode _themeMode = ThemeMode.system;
+  dynamic _rawDepthMap;
 
   // Getters for the private state variables.
   File? get selectedImage => _selectedImage;
@@ -20,11 +21,13 @@ class AppState extends ChangeNotifier {
   String get inferenceTime => _inferenceTime;
   String get selectedColorMap => _selectedColorMap;
   ThemeMode get themeMode => _themeMode;
+  dynamic get rawDepthMap => _rawDepthMap;
 
   /// Sets the selected image and resets related states.
   void setSelectedImage(File? image) {
     _selectedImage = image;
     _depthMapImageBytes = null;
+    _rawDepthMap = null;
     _inferenceTime = '';
     notifyListeners();
   }
@@ -32,6 +35,12 @@ class AppState extends ChangeNotifier {
   /// Sets the generated depth map image bytes.
   void setDepthMap(Uint8List? bytes) {
     _depthMapImageBytes = bytes;
+    notifyListeners();
+  }
+
+  /// Stores the raw output from the depth estimation model.
+  void setRawDepthMap(dynamic data) {
+    _rawDepthMap = data;
     notifyListeners();
   }
 

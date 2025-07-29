@@ -5,7 +5,8 @@ import '../models/app_state.dart';
 
 /// A dropdown to select the color map for the depth map visualization.
 class ColorMapDropdown extends StatelessWidget {
-  const ColorMapDropdown({super.key});
+  final Function(String)? onColorMapChanged;
+  const ColorMapDropdown({super.key, this.onColorMapChanged});
 
   @override
   Widget build(BuildContext context) {
@@ -24,6 +25,7 @@ class ColorMapDropdown extends StatelessWidget {
           onChanged: (String? newValue) {
             if (newValue != null) {
               appState.setSelectedColorMap(newValue);
+              onColorMapChanged?.call(newValue);
             }
           },
           items: <String>['Grayscale', 'Viridis'].map<DropdownMenuItem<String>>(

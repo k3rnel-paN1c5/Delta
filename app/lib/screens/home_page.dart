@@ -87,7 +87,13 @@ class _DepthEstimationHomePageState extends State<DepthEstimationHomePage> {
               const SizedBox(height: 32),
               _buildSectionTitle(context, 'Depth Map'),
               const SizedBox(height: 16),
-              const ColorMapDropdown(),
+              ColorMapDropdown(
+                onColorMapChanged: (_) {
+                  if (appState.rawDepthMap != null) {
+                    _applyColorMapAndUpdateView();
+                  }
+                },
+              ),
               const SizedBox(height: 16),
               const DepthMapView(),
               const SizedBox(height: 32),
@@ -128,17 +134,31 @@ class _DepthEstimationHomePageState extends State<DepthEstimationHomePage> {
     try {
       final result = await _depthEstimator.runDepthEstimation(
         appState.selectedImage!,
-        appState.selectedColorMap,
       );
-      appState.setDepthMap(result['depthMap']);
+      appState.setRawDepthMap(result['rawDepthMap']);
       appState.setInferenceTime(
         'Inference Time: ${result['inferenceTime']} ms',
       );
+      _applyColorMapAndUpdateView();
     } catch (e) {
       _showErrorDialog('An error occurred during depth estimation: $e');
     } finally {
       appState.setProcessing(false);
     }
+  }
+
+  /// Applies the current color map to the raw depth data and updates the view.
+  void _applyColorMapAndUpdateView() {
+    final appState = Provider.of<AppState>(context, listen: false);
+    if (appState.rawDepthMap == null) {
+      return;
+    }
+    // Generate the image bytes using the new color map
+    final depthMapBytes = _depthEstimator.applyColorMap(
+      appState.rawDepthMap,
+      appState.selectedColorMap,
+    );
+    appState.setDepthMap(depthMapBytes);
   }
 
   /// Shows a snackbar with a message.
