@@ -31,25 +31,24 @@ android {
         versionName = flutter.versionName
 
         ndk {
-            abiFilters.addAll(listOf("armeabi-v7a", "arm64-v8a"))
+            abiFilters.addAll(listOf("armeabi-v7a", "arm64-v8a", "x86", "x86_64"))
         }
     }
 
     buildTypes {
-        getByName("release") {
+        release {
             // TODO: Add your own signing config for the release build.
             // Signing with the debug keys for now, so `flutter run --release` works.
             signingConfig = signingConfigs.getByName("debug")
-
-            isMinifyEnabled = project.hasProperty("shrink")
-
-            //sShrinkResourcesEnabled = project.hasProperty("shrink")
+            // Enable code shrinking, obfuscation, and optimization.
+            isMinifyEnabled = true
+            // Enable resource shrinking.
+            isShrinkResources = true
             
-            // Add your new rules file here
             proguardFiles(
-                getDefaultProguardFile("proguard-android-optimize.txt"),
-                "proguard-rules.pro"
-            )
+            getDefaultProguardFile("proguard-android-optimize.txt"),
+            "proguard-rules.pro"
+        )
         }
     }
 }
@@ -58,5 +57,5 @@ flutter {
     source = "../.."
 }
 dependencies {
-    implementation("org.tensorflow:tensorflow-lite-gpu:2.9.0")
+    // implementation("org.tensorflow:tensorflow-lite-gpu:2.9.0")
 }
