@@ -1,5 +1,5 @@
 from torchvision import transforms
-import config
+from config import config
 
 def get_train_transforms(input_size=(config.IMG_HEIGHT, config.IMG_WIDTH)):
     """Returns a composition of transforms for training."""

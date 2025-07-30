@@ -203,6 +203,7 @@ model/pretrained_models/teacher/*.safetensors
 # model/export/depth_model_quantized.tflite # This one is often committed
 
 model/checkpoints/
+checkpoints
 model/export/
 
 # Jupyter Notebooks

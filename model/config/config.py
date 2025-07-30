@@ -9,9 +9,9 @@ DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 
 # -- Dataset Configuration --
 # Path to the directory containing the training images
-TRAIN_IMG_DIR = '/model/data/raw' 
+TRAIN_IMG_DIR = 'data/raw' 
 # Path to the directory containing the validation images
-VAL_IMG_DIR = '/model/data/raw'
+VAL_IMG_DIR = 'data/raw'
 
 # Data Split ratio  (training/(training+validation))
 DATA_SPLIT  = 0.7
@@ -74,6 +74,6 @@ IMGNET_NORMALIZE_STD = [0.229, 0.224, 0.225]
 
 # -- Checkpoint and Seeds --
 # Directory to save model checkpoints
-CHECKPOINT_DIR = '/model/checkpoints'
+CHECKPOINT_DIR = 'checkpoints'
 # Random seed for reproducibility
 RANDOM_SEED = 42

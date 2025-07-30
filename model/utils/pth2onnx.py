@@ -4,7 +4,7 @@ import sys
 import argparse
 
 from models.student_model import StudentDepthModel
-import config
+from config import config
 
 # to allow for absolute imports
 project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))

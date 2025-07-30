@@ -2,14 +2,13 @@ import torch
 import torch.optim as optim
 from torch.optim.lr_scheduler import CosineAnnealingLR
 from torch.utils.data import DataLoader
-from torchvision import transforms
 import time
 import os
-import tqdm
+from tqdm import tqdm
 import numpy as np
 
 # custom modules
-import config
+from config import config
 from models.teacher_model import TeacherWrapper
 from models.student_model import StudentDepthModel
 from datasets.data_loader import UnlabeledImageDataset
@@ -27,7 +26,7 @@ def train_knowledge_distillation(teacher, student, train_dataloader, val_dataloa
     for epoch in range(epochs):
         student.train() # Student in training mode
         running_loss = 0.0
-        progress_bar = tqdm(train_dataloader, desc=f"Epoch {epoch+1}/{num_epochs}")
+        progress_bar = tqdm(train_dataloader, desc=f"Epoch {epoch+1}/{epochs}")
         start_time = time.time()
 
         for images in progress_bar:
@@ -85,10 +84,12 @@ def main():
 
     # --- Models ---
     print("Loading teacher model...")
-    teacher_model = TeacherWrapper.to(device)
+    teacher_model = TeacherWrapper().to(device)
+    print("Loaded teacher model sucessfully")
     
     print("Initializing student model...")
     student_model = StudentDepthModel(encoder_name=config.STUDENT_ENCODER, pretrained=True).to(device)
+    print("Initialized student model sucessfully")
 
     # Get parameters for the encoder and decoder
     encoder_params = student_model.encoder.parameters()
@@ -116,8 +117,8 @@ def main():
     eval_transform = get_eval_transforms(input_size=input_size)
     
     # Create two separate datasets with their respective transforms
-    train_full_dataset = UnlabeledImageDataset(root_dir=config.DATASET_PATH, transform=transform, resize_size=input_size)
-    val_full_dataset = UnlabeledImageDataset(root_dir=config.DATASET_PATH, transform=eval_transform, resize_size=input_size)
+    train_full_dataset = UnlabeledImageDataset(root_dir=config.TRAIN_IMG_DIR, transform=transform, resize_size=input_size)
+    val_full_dataset = UnlabeledImageDataset(root_dir=config.VAL_IMG_DIR, transform=eval_transform, resize_size=input_size)
 
     # Use the same indices to split both datasets
     dataset_size = len(train_full_dataset)
