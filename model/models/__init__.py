@@ -1,4 +1,13 @@
-from .teacher_model import DepthModel
-from .student_model import StudentModel
+from .teacher_model import TeacherWrapper
+from .student_model import StudentDepthModel
+from .upsample_block import UpsampleBlock
+from .feature_fusion_block import FeatureFusionBlock    
+from .mini_dpt import MiniDPT
 
-__all__ = ['StudentModel', 'DepthModel']
+__all__ = [
+    'StudentDepthModel', 
+    'TeacherWrapper', 
+    'UpsampleBlock', 
+    'FeatureFusionBlock',
+    'MiniDPT'
+    ]

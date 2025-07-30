@@ -29,7 +29,7 @@ class _DepthEstimationHomePageState extends State<DepthEstimationHomePage> {
   void initState() {
     super.initState();
     OrtEnv.instance.init();
-    // Load the model after the first frame is rendered.
+    // Load the model after the first frame is rendered to not block startup.
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _modelLoader.loadModel().then((session) {
         if (session != null) {
@@ -89,6 +89,7 @@ class _DepthEstimationHomePageState extends State<DepthEstimationHomePage> {
               const SizedBox(height: 16),
               ColorMapDropdown(
                 onColorMapChanged: (_) {
+                  // If a depth map exists, re-apply the color map.
                   if (appState.rawDepthMap != null) {
                     _applyColorMapAndUpdateView();
                   }
@@ -115,6 +116,7 @@ class _DepthEstimationHomePageState extends State<DepthEstimationHomePage> {
   }
 
   /// Runs the depth estimation process.
+  /// The heavy lifting is performed in a background isolate via DepthEstimator.
   void _runDepthEstimation(BuildContext context) async {
     if (!_isModelLoaded) {
       _showSnackbar('Model is not ready yet. Please wait.');
@@ -124,7 +126,6 @@ class _DepthEstimationHomePageState extends State<DepthEstimationHomePage> {
     final appState = Provider.of<AppState>(context, listen: false);
 
     if (appState.selectedImage == null) {
-      // This check is redundant due to the button state, I am leaving it for  for safety.
       _showSnackbar('Please select an image first.');
       return;
     }
@@ -139,26 +140,36 @@ class _DepthEstimationHomePageState extends State<DepthEstimationHomePage> {
       appState.setInferenceTime(
         'Inference Time: ${result['inferenceTime']} ms',
       );
+      // After getting the raw map, apply the colorization.
       _applyColorMapAndUpdateView();
     } catch (e) {
-      _showErrorDialog('An error occurred during depth estimation: $e');
+      if (mounted) {
+        _showErrorDialog('An error occurred during depth estimation: $e');
+      }
     } finally {
-      appState.setProcessing(false);
+      if (mounted) {
+        appState.setProcessing(false);
+      }
     }
   }
 
   /// Applies the current color map to the raw depth data and updates the view.
-  void _applyColorMapAndUpdateView() {
+  /// The color mapping is a heavy operation and is run in a background isolate.
+  void _applyColorMapAndUpdateView() async {
     final appState = Provider.of<AppState>(context, listen: false);
     if (appState.rawDepthMap == null) {
       return;
     }
-    // Generate the image bytes using the new color map
-    final depthMapBytes = _depthEstimator.applyColorMap(
+
+    // The applyColorMap method now runs its logic in an isolate.
+    final depthMapBytes = await _depthEstimator.applyColorMap(
       appState.rawDepthMap,
       appState.selectedColorMap,
     );
-    appState.setDepthMap(depthMapBytes);
+
+    if (mounted) {
+      appState.setDepthMap(depthMapBytes);
+    }
   }
 
   /// Shows a snackbar with a message.
@@ -179,9 +190,7 @@ class _DepthEstimationHomePageState extends State<DepthEstimationHomePage> {
           actions: <Widget>[
             TextButton(
               child: const Text('OK'),
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
+              onPressed: () => Navigator.of(context).pop(),
             ),
           ],
         );

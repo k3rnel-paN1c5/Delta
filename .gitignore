@@ -194,7 +194,8 @@ model/weights/*.pth
 model/weights/*.ckpt
 model/weights/*.h5
 model/weights/*.tf
-model/pretrained_models/teacher_depth_anything/*.safetensors
+model/pretrained_models/teacher/*.safetensors
+*.safetensors
 # Exported models - typically committed for the app, but ignore intermediate ones
 # If you only commit the final quantized .tflite, you might ignore others here:
 # model/export/depth_model.onnx

@@ -1,136 +1,159 @@
 import torch
 import torch.optim as optim
+from torch.optim.lr_scheduler import CosineAnnealingLR
 from torch.utils.data import DataLoader
 from torchvision import transforms
-from transformers import AutoModelForDepthEstimation
 import time
 import os
-import argparse  # for command-line arguments
+import tqdm
+import numpy as np
 
 # custom modules
-from models.teacher_model import DepthModel
-from models.student_model import StudentModel
-from datasets.unlabeled import UnlabeledImageDataset
-from criterions import DepthDistillationLoss
-from utils.transforms import get_train_transforms
+import config
+from models.teacher_model import TeacherWrapper
+from models.student_model import StudentDepthModel
+from datasets.data_loader import UnlabeledImageDataset
+from criterions.criterion import EnhancedDistillationLoss
+from utils.transforms import get_train_transforms, get_eval_transforms
 
-def train_knowledge_distillation(teacher, student, dataloader, criterion, optimizer, epochs, device, checkpoint_dir):
+def train_knowledge_distillation(teacher, student, train_dataloader, val_dataloader, criterion, optimizer, epochs, scheduler, checkpoint_dir, device):
     """
     Train the student model using Response-Based knowledge distillation.
     """
-    teacher.eval()
-    student.train()
+    teacher.eval() # Teacher should always be in evaluation mode
 
     print(f"Starting Knowledge Distillation Training on {device}...")
+    min_loss = float('inf')
     for epoch in range(epochs):
+        student.train() # Student in training mode
         running_loss = 0.0
+        progress_bar = tqdm(train_dataloader, desc=f"Epoch {epoch+1}/{num_epochs}")
         start_time = time.time()
 
-        for batch_idx, inputs in enumerate(dataloader):
-            inputs = inputs.to(device)
+        for images in progress_bar:
+            images = images.to(device)
             optimizer.zero_grad()
 
+            # Forward pass with Teacher model (no_grad as teacher is fixed)
             with torch.no_grad():
-                teacher_outputs = teacher(inputs)
+                teacher_depth, teacher_features = teacher(images) # Returns depth map
 
-            student_outputs = student(inputs)
-            loss = criterion(student_outputs, teacher_outputs)
+            # Forward pass with Student model
+            student_depth, student_features  = student(images) # Returns depth map
+
+            # Calculate distillation loss
+            loss = criterion(student_depth, teacher_depth, student_features, teacher_features)
             loss.backward()
             optimizer.step()
             running_loss += loss.item()
 
-            if (batch_idx + 1) % 10 == 0:  # Print more frequently for smaller datasets
-                print(f"Epoch [{epoch+1}/{epochs}], Batch [{batch_idx+1}/{len(dataloader)}], Loss: {running_loss / (batch_idx+1):.4f}")
 
-        epoch_loss = running_loss / len(dataloader)
+        epoch_loss = running_loss / len(train_dataloader)
+        current_lr = scheduler.get_last_lr()[0]
         end_time = time.time()
-        print(f"Epoch {epoch+1} finished. Avg Loss: {epoch_loss:.4f}, Time: {end_time - start_time:.2f}s")
+        print(f"End of Epoch {epoch+1},Time: {end_time - start_time:.2f}s, Current LR: {current_lr:.6f}, Average Loss: {epoch_loss:.4f}")
+        scheduler.step()
 
-        if (epoch + 1) % 5 == 0:
-            checkpoint_path = os.path.join(checkpoint_dir, f'student_epoch_{epoch+1}.pth')
-            torch.save(student.state_dict(), checkpoint_path)
-            print(f"Student model saved to {checkpoint_path}")
+        # Validation loop
+        student.eval() # Student in evaluation mode for validation
+        val_running_loss = 0.0
+        with torch.no_grad():
+            progress_bar_val = tqdm(val_dataloader, desc=f"Epoch {epoch+1}/{epochs} [Validation]")
+            for val_images in progress_bar_val:
+                val_images = val_images.to(device)
+                teacher_depth, TFeat = teacher(val_images)
+                student_depth, SFeat = student(val_images)
+                val_loss = criterion(student_depth, teacher_depth, SFeat, TFeat)
+                val_running_loss += val_loss.item()
+
+        val_epoch_loss = val_running_loss / len(val_dataloader)
+        print(f"Average Validation Loss: {val_epoch_loss:.4f}")
+
+        if val_epoch_loss < min_loss:
+            min_loss = val_epoch_loss
+            print("Validation loss improved. Saving the model.")
+            
+            torch.save(student.state_dict(), f"{checkpoint_dir}/BestStudent.pth")
 
     print("Knowledge Distillation Training Finished!")
-
+    
 def main():
-    # --- Argument Parsing ---
-    parser = argparse.ArgumentParser(description="Train a student model for depth estimation via knowledge distillation.")
-    parser.add_argument('--data_dir', type=str, required=True, help='Path to the directory of unlabeled images.')
-    parser.add_argument('--epochs', type=int, default=15, help='Number of training epochs.')
-    parser.add_argument('--batch_size', type=int, default=5, help='Batch size for training.')
-    parser.add_argument('--lr', type=float, default=1e-4, help='Learning rate for the optimizer.')
-    args = parser.parse_args()
 
-    # --- Setup --- (From Cell: "Define Parameters & Models")
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    # --- Setup --- 
+    device = config.DEVICE
     print(f"Using device: {device}")
 
     # --- Models ---
     print("Loading teacher model...")
-    teacher_model_name = "depth-anything/Depth-Anything-V2-Large-hf"
-    local_teacher_path = os.path.join('pretrained_models', 'teacher_depth_anything')
-
-    if os.path.exists(local_teacher_path):
-        # If the model exists locally, load it from there
-        print(f"Loading teacher model from local path: {local_teacher_path}")
-        teacher_base = AutoModelForDepthEstimation.from_pretrained(local_teacher_path)
-    else:
-        # If not, download it from Hugging Face and save it locally
-        print(f"Downloading teacher model from Hugging Face: {teacher_model_name}")
-        teacher_base = AutoModelForDepthEstimation.from_pretrained(teacher_model_name)
-        
-        print(f"Saving teacher model to {local_teacher_path} for future use...")
-        os.makedirs(local_teacher_path, exist_ok=True)
-        teacher_base.save_pretrained(local_teacher_path)
-    
-    teacher_model = DepthModel(teacher_base).to(device)
+    teacher_model = TeacherWrapper.to(device)
     
     print("Initializing student model...")
-    student_model = StudentModel().to(device)
+    student_model = StudentDepthModel(encoder_name=config.STUDENT_ENCODER, pretrained=True).to(device)
 
+    # Get parameters for the encoder and decoder
+    encoder_params = student_model.encoder.parameters()
+    decoder_params = student_model.decoder.parameters()
 
     # --- Optimizer, Loss, and Data ---
-    optimizer = optim.Adam(student_model.parameters(), lr=args.lr)
-    criterion = DepthDistillationLoss(lambda_depth=0.1, lambda_si=1.0, lambda_grad=1.0, lambda_ssim=1.0)
+    student_optimizer = optim.AdamW([
+        {'params': encoder_params, 'lr': config.LEARNING_RATE_ENCODER},  # A lower learning rate for the encoder
+        {'params': decoder_params, 'lr': config.LEARNING_RATE_DECODER}   # A higher learning rate for the decoder
+    ], weight_decay=config.WEIGHT_DECAY)
+    
+    num_epochs = config.EPOCHS
+    scheduler = CosineAnnealingLR(student_optimizer, T_max=num_epochs, eta_min=config.MIN_LEARNING_RATE)
 
-    transform = get_train_transforms(input_size=(384, 384))
+    criterion = EnhancedDistillationLoss(
+        lambda_silog = config.LAMBDA_SILOG, 
+        lambda_grad = config.LAMBDA_GRAD, 
+        lambda_feat = config.LAMBDA_FEAT, 
+        lambda_attn = config.LAMBDA_ATTN, 
+        alpha = config.ALPHA).to(device)
+    
+    input_size=(config.IMG_HEIGHT, config.IMG_WIDTH)
+    
+    transform = get_train_transforms(input_size=input_size)
+    eval_transform = get_eval_transforms(input_size=input_size)
+    
+    # Create two separate datasets with their respective transforms
+    train_full_dataset = UnlabeledImageDataset(root_dir=config.DATASET_PATH, transform=transform, resize_size=input_size)
+    val_full_dataset = UnlabeledImageDataset(root_dir=config.DATASET_PATH, transform=eval_transform, resize_size=input_size)
 
-    dataset = UnlabeledImageDataset(root_dir=args.data_dir, transform=transform)
-    dataloader = DataLoader(dataset, batch_size=args.batch_size, shuffle=True, num_workers=2)
+    # Use the same indices to split both datasets
+    dataset_size = len(train_full_dataset)
+    train_size = int(config.DATA_SPLIT * dataset_size)
+    val_size = dataset_size - train_size
 
+    indices = list(range(dataset_size))
+    np.random.seed(config.RANDOM_SEED)
+    np.random.shuffle(indices) 
+    train_indices, val_indices = indices[:train_size], indices[train_size:]
+
+    # Create subsets for training and validation
+    train_dataset = torch.utils.data.Subset(train_full_dataset, train_indices)
+    val_dataset = torch.utils.data.Subset(val_full_dataset, val_indices)
+    
+    
+    # Create separate dataloaders for training and validation
+    train_dataloader = DataLoader(train_dataset, batch_size=config.BATCH_SIZE, shuffle=True, num_workers=config.NUM_WORKERS)
+    val_dataloader = DataLoader(val_dataset, batch_size=config.BATCH_SIZE, shuffle=False, num_workers=config.NUM_WORKERS)
+
+    print(f"Training set size: {len(train_dataset)}")
+    print(f"Validation set size: {len(val_dataset)}")
     # --- Checkpoint Directory ---
-    checkpoint_dir = 'checkpoints'
+    checkpoint_dir = config.CHECKPOINT_DIR
     os.makedirs(checkpoint_dir, exist_ok=True)
-
-        # --- Verify which layers are trainable ---
-    print("All parameters in student_model:")
-    for name, param in student_model.named_parameters():
-        if param.requires_grad:
-            print(f"  {name}")
-
-    print("----------------------------------------")
-    for name, param in student_model.named_parameters():
-        param.requires_grad = False
-
-    # Unfreeze parameters in the 'head' layer
-    for name, param in student_model.decoder.named_parameters():
-        param.requires_grad = True
-
-    # --- Verify which layers are trainable ---
-    print("Trainable parameters in student_model:")
-    for name, param in student_model.named_parameters():
-        if param.requires_grad:
-            print(f"  {name}")
 
 
     train_knowledge_distillation(
         teacher=teacher_model,
         student=student_model,
-        dataloader=dataloader,
+        train_dataloader=train_dataloader,
+        val_dataloader=val_dataloader,
         criterion=criterion,
-        optimizer=optimizer,
-        epochs=args.epochs,
+        optimizer=student_optimizer,
+        epochs=num_epochs,
+        scheduler=scheduler,
         device=device,
         checkpoint_dir=checkpoint_dir
     )

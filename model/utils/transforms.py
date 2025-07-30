@@ -1,20 +1,21 @@
 from torchvision import transforms
+import config
 
-def get_train_transforms(input_size=(384, 384)):
+def get_train_transforms(input_size=(config.IMG_HEIGHT, config.IMG_WIDTH)):
     """Returns a composition of transforms for training."""
     return transforms.Compose([
-        transforms.RandomHorizontalFlip(p=0.5),
-        transforms.RandomRotation(degrees=10),
-        transforms.ColorJitter(brightness=0.2, contrast=0.2, saturation=0.2, hue=0.1),
-        transforms.RandomResizedCrop(input_size, scale=(0.8, 1.0)),
+        transforms.RandomHorizontalFlip(p=config.FLIP_PROP),
+        transforms.RandomRotation(degrees=config.ROTATION_DEG),
+        transforms.RandomResizedCrop(input_size, scale=(config.MIN_SCALE, config.MAX_SCALE)),
+        transforms.ColorJitter(brightness=config.BRIGHTNESS, contrast=config.CONTRAST, saturation=config.SATURATION, hue=config.HUE),
         transforms.ToTensor(),
-        transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+        transforms.Normalize(mean=config.IMGNET_NORMALIZE_MEAN, std=config.IMGNET_NORMALIZE_STD)
     ])
 
-def get_eval_transforms(input_size=(384, 384)):
+def get_eval_transforms(input_size=(config.IMG_HEIGHT, config.IMG_WIDTH)):
     """Returns a composition of transforms for evaluation."""
     return transforms.Compose([
         transforms.Resize(input_size),
         transforms.ToTensor(),
-        transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+        transforms.Normalize(mean=config.IMGNET_NORMALIZE_MEAN, std=config.IMGNET_NORMALIZE_STD)
     ])
