@@ -22,6 +22,8 @@ IMG_WIDTH = 384
 # -- Model Configuration --
 # Teacher Model (Hugging Face identifier or local path)
 TEACHER_MODEL_ID = 'depth-anything/depth-anything-v2-small-hf'
+# Indices of the feature maps to extract from the teacher
+TEACHER_FEATURE_INDICES = [3, 5, 7, 11]
 
 # Student Model Configuration
 # Encoder to use for the student model (e.g., 'mobilevit_xs')
@@ -29,7 +31,8 @@ STUDENT_ENCODER = 'mobilevit_xs'
 # Indices of the feature maps to extract from the encoder
 STUDENT_FEATURE_INDICES = [0, 1, 2, 3]
 # Channel dimensions for the MiniDPT decoder blocks
-STUDENT_DECODER_CHANNELS = [256, 128, 96, 64]
+STUDENT_DECODER_CHANNELS = [64, 128, 160, 256]
+
 
 
 # -- Training Configuration --
@@ -64,7 +67,7 @@ ALPHA = 0.5
 FLIP_PROP = 0.5
 ROTATION_DEG = 10
 MIN_SCALE = 0.8
-MAX_SCALE = 10
+MAX_SCALE = 1.0
 BRIGHTNESS = 0.4
 CONTRAST = 0.4
 SATURATION = 0.4

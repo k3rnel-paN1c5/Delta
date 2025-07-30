@@ -14,6 +14,18 @@ def compute_depth_metrics(pred, target):
     # Create a mask for valid depth values (greater than a small epsilon)
     valid_mask = (target > 1e-3) & (pred > 1e-3)
 
+    # Handle the edge case where there are no valid pixels
+    if valid_mask.sum() == 0:
+        return {
+            'abs_rel': float('nan'),
+            'sq_rel': float('nan'),
+            'rmse': float('nan'),
+            'rmse_log': float('nan'),
+            'a1': float('nan'),
+            'a2': float('nan'),
+            'a3': float('nan')
+        }
+        
     # Apply mask to predictions and target
     pred_valid = pred[valid_mask]
     target_valid = target[valid_mask]

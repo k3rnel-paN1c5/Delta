@@ -15,8 +15,7 @@ class StudentDepthModel(nn.Module):
     devices. The training is done via knowledge distillation from a larger,
     more powerful teacher model.
     """
-    def __init__(self, encoder_name: str ='mobilevit_xs', 
-                 feature_indices: Tuple[int, ...] = (0, 1, 2, 3), 
+    def __init__(self, feature_indices: Tuple[int, ...] = (0, 1, 2, 3), 
                  decoder_channels: Tuple[int, ...] = (64, 128, 160, 256), 
                  pretrained: bool = True):
         """
@@ -40,7 +39,7 @@ class StudentDepthModel(nn.Module):
         # `features_only=True` makes the model return a List of feature maps
         # at different stages, instead of a final classification output.
         self.encoder = timm.create_model(
-            encoder_name,
+            'mobilevit_xs',
             pretrained=pretrained,
             features_only=True, # This returns a List of feature maps
         )
@@ -60,7 +59,7 @@ class StudentDepthModel(nn.Module):
         # to produce the final depth map.
         self.decoder = MiniDPT(encoder_channels, list(decoder_channels))
 
-    def forward(self, x: torch.Tensor) -> Tuple[torch.Tensor, list[torch.Tensor]]:
+    def forward(self, x: torch.Tensor) -> Tuple[torch.Tensor, List[torch.Tensor]]:
         """
         Forward pass of the StudentDepthModel.
 
@@ -70,8 +69,8 @@ class StudentDepthModel(nn.Module):
         Returns:
             A tuple containing:
             - The final predicted depth map (torch.Tensor).
-            - A List of intermediate feature maps from the encoder, which will be
-              used for feature-based distillation (list[torch.Tensor]).
+            - A list of intermediate feature maps from the encoder, which will be
+              used for feature-based distillation (List[torch.Tensor]).
         """
         # Get the feature maps from the encoder
         features = self.encoder(x)

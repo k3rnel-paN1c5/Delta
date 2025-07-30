@@ -30,7 +30,10 @@ def convert_to_onnx(trained_model_path: str, output_dir: str, verbose: bool):
     
     # --- Load Model ---
     print("Loading the student model...")
-    model = StudentDepthModel().to(device)
+    model = StudentDepthModel(
+        feature_indices=config.STUDENT_FEATURE_INDICES,
+        decoder_channels=config.STUDENT_DECODER_CHANNELS
+        ).to(device)
     model.load_state_dict(torch.load(trained_model_path, map_location=device))
     model.eval()
     print("Model loaded successfully.")
@@ -55,7 +58,7 @@ def convert_to_onnx(trained_model_path: str, output_dir: str, verbose: bool):
                           dummy_input,
                           output_path,
                           export_params=True,
-                          opset_version=11,
+                          opset_version=14,
                           do_constant_folding=True,
                           input_names=['input'],
                           output_names=['output'],

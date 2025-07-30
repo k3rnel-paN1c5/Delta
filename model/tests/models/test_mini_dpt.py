@@ -1,10 +1,5 @@
 import unittest
 import torch
-import sys
-import os
-
-# Add project root to the Python path to resolve import issues
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../../')))
 
 from models.mini_dpt import MiniDPT
 
@@ -14,41 +9,37 @@ class TestMiniDPT(unittest.TestCase):
     """
 
     def setUp(self):
-        """
-        Set up a MiniDPT instance for testing.
-        """
-        self.decoder_channels = [256, 128, 64, 32, 16]
-        self.encoder_channels = [16, 24, 40, 112, 320] # Example for efficientnet_b0
-        self.model = MiniDPT(
-            encoder_channels=self.encoder_channels,
-            decoder_channels=self.decoder_channels
-        )
-        self.model.eval()
-
-    def test_forward_pass(self):
-        """
-        Test the forward pass of the MiniDPT decoder to ensure it produces an output
-        of the correct shape and type.
-        """
-        # Create dummy input feature maps from an encoder
-        # These sizes correspond to the output of an efficientnet_b0 at different stages
-        features = [
-            torch.randn(1, self.encoder_channels[0], 112, 112),
-            torch.randn(1, self.encoder_channels[1], 56, 56),
-            torch.randn(1, self.encoder_channels[2], 28, 28),
-            torch.randn(1, self.encoder_channels[3], 14, 14),
-            torch.randn(1, self.encoder_channels[4], 7, 7),
+        """Set up a dummy list of encoder feature maps for testing the MiniDPT decoder."""
+        self.encoder_channels = [64, 128, 160, 256]
+        self.decoder_channels = [64, 128, 160, 256]
+        self.encoder_features = [
+            torch.randn(2, self.encoder_channels[0], 48, 48),
+            torch.randn(2, self.encoder_channels[1], 24, 24),
+            torch.randn(2, self.encoder_channels[2], 12, 12),
+            torch.randn(2, self.encoder_channels[3], 6, 6)
         ]
+        self.mini_dpt = MiniDPT(self.encoder_channels, self.decoder_channels)
+        self.mini_dpt.eval()
 
-        # Perform a forward pass
-        with torch.no_grad():
-            output = self.model(features)
 
-        # Check the output type
-        self.assertIsInstance(output, torch.Tensor)
+    def test_output_shape(self):
+        """Test if the output of the MiniDPT decoder has the correct shape."""
+        output_tensor = self.mini_dpt(self.encoder_features)
+        self.assertEqual(output_tensor.shape[0], 2)
+        self.assertEqual(output_tensor.shape[1], 1)
+        self.assertEqual(output_tensor.shape[2], 96)
+        self.assertEqual(output_tensor.shape[3], 96)
 
-        # Check the output shape
-        self.assertEqual(output.shape, (1, 1, 224, 224))
+    def test_output_type(self):
+        """Test if the output of the MiniDPT decoder is a torch.Tensor."""
+        output_tensor = self.mini_dpt(self.encoder_features)
+        self.assertIsInstance(output_tensor, torch.Tensor)
+
+    def test_value_error_on_channel_mismatch(self):
+        """Test if a ValueError is raised when encoder and decoder channel lists have different lengths."""
+        with self.assertRaises(ValueError):
+            MiniDPT(encoder_channels=[64, 128], decoder_channels=[64, 128, 256])
+
 
 if __name__ == '__main__':
-    unittest.main()
+    unittest.main(argv=['first-arg-is-ignored'], exit=False)

@@ -23,14 +23,16 @@ def compute_depth_gradients(depth_map: torch.Tensor) -> torch.Tensor:
     sobel_x = torch.tensor([[-1, 0, 1], [-2, 0, 2], [-1, 0, 1]], dtype=torch.float32, device=depth_map.device).view(1, 1, 3, 3)
 
     # Apply filters using depthwise convolution
-    grad_y = F.conv2d(depth_map, sobel_y, padding=1)
-    grad_x = F.conv2d(depth_map, sobel_x, padding=1)
+    padded_map = F.pad(depth_map, (1, 1, 1, 1), mode='replicate')
+
+    grad_y = F.conv2d(padded_map, sobel_y, padding=0)
+    grad_x = F.conv2d(padded_map, sobel_x, padding=0)
 
     # Return the absolute gradients, stacked along the channel dimension
     return torch.cat([grad_y.abs(), grad_x.abs()], dim=1)
 
 
-class EnhancedDistillationLoss(nn.Module):
+class DistillationLoss(nn.Module):
     """
     A comprehensive loss function for knowledge distillation in depth estimation.
 
@@ -48,7 +50,7 @@ class EnhancedDistillationLoss(nn.Module):
     def __init__(self, lambda_silog: float = 1.0, lambda_grad: float = 0.2, 
                  lambda_feat: float = 0.1, lambda_attn: float = 1.0, alpha: float = 0.5):
         """
-        Initializes the EnhancedDistillationLoss.
+        Initializes the DistillationLoss.
 
         Args:
             lambda_silog (float): The weight for the SILog depth loss.
@@ -81,8 +83,11 @@ class EnhancedDistillationLoss(nn.Module):
         self.projection_convs = nn.ModuleList()
         for s_feat, t_feat in zip(student_features, teacher_features):
             s_chan, t_chan = s_feat.shape[1], t_feat.shape[1]
-            # Create a 1x1 convolution to project student channels to teacher channels
-            proj = nn.Conv2d(s_chan, t_chan, kernel_size=1, bias=False).to(device)
+            if s_chan != t_chan:
+                # Create a 1x1 convolution to project student channels to teacher channels
+                proj = nn.Conv2d(s_chan, t_chan, kernel_size=1, bias=False)
+            else:
+                proj = nn.Identity()
             self.projection_convs.append(proj)
 
     def _compute_attention_map(self, feature_map: torch.Tensor) -> torch.Tensor:

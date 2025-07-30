@@ -16,7 +16,9 @@ class TeacherWrapper(nn.Module):
     distillation.
     """
     def __init__(self, model_id: str = 'depth-anything/depth-anything-v2-small-hf', 
-                cache_dir: str = None):
+                cache_dir: str = None,
+                selected_features_indices: List[int] = [3, 5, 7, 11]
+        ):
         """
         Initializes the TeacherWrapper.
 
@@ -33,6 +35,7 @@ class TeacherWrapper(nn.Module):
         self.model = AutoModelForDepthEstimation.from_pretrained(model_id, cache_dir=cache_dir)
         # Set the model to evaluation mode, as we don't want to train it
         self.model.eval()
+        self.selected_features_indices = selected_features_indices
 
     @torch.no_grad()
     def forward(self, x: torch.Tensor) -> Tuple[torch.Tensor, List[torch.Tensor]]:
@@ -80,7 +83,8 @@ class TeacherWrapper(nn.Module):
         # We select a subset of the hidden states to use as feature targets.
         # For ViT-based models like DINOv2, these indices correspond to the
         # outputs of different blocks in the encoder.
-        selected_features = [hidden_states[i] for i in [3, 5, 7, 11]]
+        
+        selected_features = [hidden_states[i] for i in self.selected_features_indices]
 
         # 5. Reshape ViT Features
         # The feature maps from Vision Transformer (ViT) models have a different

@@ -1,12 +1,5 @@
 import unittest
 import torch
-import sys
-import os
-from typing import Tuple, List
-
-# Add project root to the Python path to resolve import issues
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../../')))
-
 
 from models.student_model import StudentDepthModel
 
@@ -16,35 +9,28 @@ class TestStudentModel(unittest.TestCase):
     """
 
     def setUp(self):
-        """
-        Set up a StudentDepthModel instance for testing.
-        """
-        self.model = StudentDepthModel(
-            encoder_name='mobilevit_xs',
-            feature_indices = (0, 1, 2, 3),
-            decoder_channels=(64, 128, 160, 256),
-            pretrained=True
-        )
-        self.model.eval()
+        """Set up a dummy input tensor and initialize the student model."""
+        self.input_tensor = torch.randn(2, 3, 384, 384)
+        self.student_model = StudentDepthModel(pretrained=False)
+        self.student_model.eval()
+
 
     def test_forward_pass(self):
-        """
-        Test the forward pass of the StudentDepthModel to ensure it produces an output
-        of the correct shape and type.
-        """
-        # Create a dummy input tensor
-        input_tensor = torch.randn(1, 3, 224, 224)
+        """Test the forward pass of the student model, checking output shapes and types."""
+        depth_map, features = self.student_model(self.input_tensor)
 
-        # Perform a forward pass
-        with torch.no_grad():
-            depth_map, selected_features = self.model(input_tensor)
-
-        # Check the output type
+        # Test depth map output
         self.assertIsInstance(depth_map, torch.Tensor)
-        # self.assertIsInstance(selected_features, List[torch.Tensor])
+        self.assertEqual(depth_map.shape[0], 2)
+        self.assertEqual(depth_map.shape[1], 1)
+        self.assertEqual(depth_map.shape[2], 384)
+        self.assertEqual(depth_map.shape[3], 384)
 
-        # Check the output shape
-        self.assertEqual(depth_map.shape, (1, 1, 224, 224))
+        # Test features output
+        self.assertIsInstance(features, list)
+        self.assertEqual(len(features), 4)
+        for feature in features:
+            self.assertIsInstance(feature, torch.Tensor)
 
 if __name__ == '__main__':
-    unittest.main()
+    unittest.main(argv=['first-arg-is-ignored'], exit=False)

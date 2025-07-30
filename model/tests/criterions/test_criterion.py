@@ -1,66 +1,110 @@
 import unittest
 import torch
-import sys
-import os
+import torch.nn as nn
 
-# Add the project root to the Python path to resolve import issues
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../../')))
+from criterions.criterion import compute_depth_gradients, DistillationLoss
 
-from criterions.criterion import EnhancedDistillationLoss
-
-class TestEnhancedDistillationLoss(unittest.TestCase):
+class TestDistillationLoss(unittest.TestCase):
     """
-    Unit tests for the EnhancedDistillationLoss function.
+    Unit tests for the DistillationLoss function.
     """
 
     def setUp(self):
-        """
-        Set up dummy tensors for testing the loss function.
-        """
+        """Set up dummy tensors for testing the loss functions."""
+        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.batch_size = 2
         self.height = 32
         self.width = 32
 
-        # Create dummy model outputs and ground truth
-        self.student_depth = torch.rand(self.batch_size, 1, self.height, self.width).clamp(min=0.1)
-        self.teacher_depth = torch.rand(self.batch_size, 1, self.height, self.width).clamp(min=0.1)
+        # Mock model outputs
+        self.student_depth = torch.rand(self.batch_size, 1, self.height, self.width, device=self.device) + 0.1
+        self.teacher_depth = torch.rand(self.batch_size, 1, self.height, self.width, device=self.device) + 0.1
 
-        # Create dummy features and attention maps from student and teacher
-        self.student_features = [torch.rand(self.batch_size, 64, self.height // 4, self.width // 4)]
-        self.teacher_features = [torch.rand(self.batch_size, 64, self.height // 4, self.width // 4)]
-        # Instantiate the loss function with default weights
-        self.criterion = EnhancedDistillationLoss()
+        # Mock feature maps with different channel and spatial sizes
+        self.student_features = [
+            torch.randn(self.batch_size, 64, self.height // 2, self.width // 2, device=self.device),
+            torch.randn(self.batch_size, 128, self.height // 4, self.width // 4, device=self.device)
+        ]
+        self.teacher_features = [
+            torch.randn(self.batch_size, 96, self.height // 2, self.width // 2, device=self.device),
+            # Test spatial resizing
+            torch.randn(self.batch_size, 160, self.height // 8, self.width // 8, device=self.device) 
+        ]
+        self.loss_fn = DistillationLoss().to(self.device)
 
-    def test_forward_pass_returns_scalar_tensor(self):
-        """
-        Test that the forward pass returns a single, non-negative scalar tensor.
-        """
-        loss = self.criterion(
-            student_depth=self.student_depth,
-            teacher_depth=self.teacher_depth,
-            student_features=self.student_features,
-            teacher_features=self.teacher_features,
-        )
 
-        self.assertIsInstance(loss, torch.Tensor, "Loss should be a torch.Tensor")
-        self.assertEqual(loss.shape, torch.Size([]), "Loss should be a scalar")
-        self.assertGreaterEqual(loss.item(), 0, "Loss should be non-negative")
+    def test_compute_depth_gradients(self):
+        """Test the compute_depth_gradients function."""
+        depth_map = torch.randn(self.batch_size, 1, self.height, self.width, device=self.device)
+        gradients = compute_depth_gradients(depth_map)
 
+        # Check output shape: [B, 2, H, W] (for dy and dx)
+        self.assertEqual(gradients.shape, (self.batch_size, 2, self.height, self.width))
+        self.assertIsInstance(gradients, torch.Tensor)
+        
+        # Gradients of a constant map should be zero
+        constant_map = torch.ones(self.batch_size, 1, self.height, self.width, device=self.device)
+        zero_grads = compute_depth_gradients(constant_map)
+        self.assertTrue(torch.all(zero_grads == 0))
     
-    def test_distillation_loss_contribution(self):
-        """
-        Test that the distillation components (gradient, feature, attention) contribute correctly.
-        """
-        # Create a criterion with only distillation components enabled
-        criterion_distill_only = EnhancedDistillationLoss(lambda_silog=0.0, lambda_grad=1.0, lambda_feat=1.0, lambda_attn=1.0)
+    def test_attention_map_computation(self):
+        """Test the internal _compute_attention_map method."""
+        feature_map = torch.randn(self.batch_size, 64, 16, 16, device=self.device)
+        attention_map = self.loss_fn._compute_attention_map(feature_map)
 
-        # When student and teacher outputs are different, loss should be positive
-        loss = criterion_distill_only(
-            student_depth=self.student_depth, teacher_depth=self.teacher_depth,
-            student_features=self.student_features, teacher_features=self.teacher_features
-        )
-        self.assertGreater(loss.item(), 0)
+        # Check output shape: [B, 1, H, W]
+        self.assertEqual(attention_map.shape, (self.batch_size, 1, 16, 16))
+        self.assertGreaterEqual(attention_map.min().item(), 0) # Attention map should be non-negative
 
         
+    def test_projection_layer_initialization(self):
+        """Test that projection conv layers are created correctly on the first forward pass."""
+        self.assertIsNone(self.loss_fn.projection_convs) # Should be None before first forward pass
+        
+        # Run forward pass
+        self.loss_fn(self.student_depth, self.teacher_depth, self.student_features, self.teacher_features)
+        
+        # Check if ModuleList was created
+        self.assertIsInstance(self.loss_fn.projection_convs, nn.ModuleList)
+        self.assertEqual(len(self.loss_fn.projection_convs), len(self.student_features))
+
+        # Check channel dimensions of the projection layers
+        s_channels = [feat.shape[1] for feat in self.student_features]
+        t_channels = [feat.shape[1] for feat in self.teacher_features]
+        for i, proj_layer in enumerate(self.loss_fn.projection_convs):
+            self.assertEqual(proj_layer.in_channels, s_channels[i])
+            self.assertEqual(proj_layer.out_channels, t_channels[i])
+
+    def test_forward_pass_and_loss_value(self):
+        """Test the forward pass of the DistillationLoss."""
+        loss = self.loss_fn(self.student_depth, self.teacher_depth, self.student_features, self.teacher_features)
+
+        # Check if loss is a scalar tensor and is non-negative
+        self.assertIsInstance(loss, torch.Tensor)
+        self.assertEqual(loss.dim(), 0)
+        self.assertGreaterEqual(loss.item(), 0)
+
+    def test_zero_loss_on_identical_inputs(self):
+        """Test if the loss is zero when student and teacher inputs are identical."""
+        # Create a new loss function to ensure projections match C_in to C_in
+        loss_fn_zero_test = DistillationLoss().to(self.device)
+        
+        # When inputs are identical, all loss components should be zero
+        loss = loss_fn_zero_test(self.student_depth, self.student_depth, self.student_features, self.student_features)
+        
+        # The loss should be very close to zero
+        self.assertAlmostEqual(loss.item(), 0, places=6)
+
+    def test_loss_with_zero_depth(self):
+        """Test that the loss calculation is stable when some depth values are zero."""
+        student_depth_with_zeros = self.student_depth.clone()
+        student_depth_with_zeros[0, 0, 0, 0] = 0 # Introduce a zero value
+
+        loss = self.loss_fn(student_depth_with_zeros, self.teacher_depth, self.student_features, self.teacher_features)
+        
+        # Ensure the loss is not NaN or Inf
+        self.assertFalse(torch.isnan(loss))
+        self.assertFalse(torch.isinf(loss))
+
 if __name__ == '__main__':
-    unittest.main()
+    unittest.main(argv=['first-arg-is-ignored'], exit=False)

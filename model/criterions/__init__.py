@@ -1,7 +1,7 @@
-from .criterion import EnhancedDistillationLoss
+from .criterion import DistillationLoss
 from .criterion import compute_depth_gradients
 
 __all__ = [
-    'EnhancedDistillationLoss', 
+    'DistillationLoss', 
     'compute_depth_gradients'
     ]

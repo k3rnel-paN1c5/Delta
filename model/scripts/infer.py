@@ -1,3 +1,15 @@
+"""
+This script performs inference with a trained student depth estimation model on a single image or a directory of images.
+
+Key functionalities include:
+1.  **Model Loading**: Loads a trained student model from a specified checkpoint file (.pth).
+2.  **Image Preprocessing**: Applies the same evaluation transformations used during training to the input image(s).
+3.  **Inference**: Runs the model on the preprocessed image tensor to generate a predicted depth map.
+4.  **Visualization and Saving**: Applies a colormap to the grayscale depth map for better visualization and saves the result as a PNG image in a specified output directory.
+
+The script is executed via the command line and requires paths to the trained model and the input image or directory. The output path is optional.
+"""
+
 import torch
 import os
 import argparse
@@ -5,9 +17,10 @@ from PIL import Image
 from torchvision import transforms
 import matplotlib.pyplot as plt
 
-# Assuming your model classes are in the parent directory under 'models'
 import sys
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+from config import config
+from utils.transforms import get_eval_transforms
 from models.student_model import StudentDepthModel
 from utils.visuals import apply_color_map
 
@@ -15,23 +28,19 @@ def infer(args):
     """
     Performs inference on a single image or a directory of images.
     """
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    device = config.DEVICE
     print(f"Using device: {device}")
 
     # --- 1. Load the trained student model ---
     print("Loading the Student Depth Model...")
-    model = StudentDepthModel(encoder_name='mobilevit_xs', pretrained=False).to(device)
+    model = StudentDepthModel(pretrained=True).to(device)
     model.load_state_dict(torch.load(args.model_path, map_location=device))
     model.eval()
     print("Model loaded successfully.")
 
     # --- 2. Define image transformations ---
-    input_size = (384, 384)
-    transform = transforms.Compose([
-        transforms.Resize(input_size),
-        transforms.ToTensor(),
-        transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
-    ])
+    input_size = (config.IMG_HEIGHT, config.IMG_WIDTH)
+    transform = get_eval_transforms(input_size)
 
     # --- 3. Get list of images to process ---
     if os.path.isdir(args.input_path):
