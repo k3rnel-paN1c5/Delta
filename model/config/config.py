@@ -9,35 +9,41 @@ DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 
 # -- Dataset Configuration --
 # Path to the directory containing the training images
-TRAIN_IMG_DIR = 'data/raw' 
+TRAIN_IMG_DIR = "data/raw"
 # Path to the directory containing the validation images
-VAL_IMG_DIR = 'data/raw'
+VAL_IMG_DIR = "data/raw"
 
 # Data Split ratio  (training/(training+validation))
-DATA_SPLIT  = 0.7
+DATA_SPLIT = 0.7
 IMG_HEIGHT = 384
 IMG_WIDTH = 384
 
 
 # -- Model Configuration --
+TEACHER_MODEL_NAME = "DepthAnythingV2"
 # Teacher Model (Hugging Face identifier or local path)
-TEACHER_MODEL_ID = 'depth-anything/depth-anything-v2-small-hf'
+TEACHER_MODEL_ID = "depth-anything/depth-anything-v2-small-hf"
 # Indices of the feature maps to extract from the teacher
 TEACHER_FEATURE_INDICES = [3, 5, 7, 11]
 
 # Student Model Configuration
+#
+STUDENT_MODEL_NAME = "StudentDepthModel"
 # Encoder to use for the student model (e.g., 'mobilevit_xs')
-STUDENT_ENCODER = 'mobilevit_xs'
+STUDENT_ENCODER = "mobilevit_xs"
 # Indices of the feature maps to extract from the encoder
 STUDENT_FEATURE_INDICES = [0, 1, 2, 3]
+# boolean to use pre trained weights
+USE_PRETRAINED = True
 # Channel dimensions for the MiniDPT decoder blocks
 STUDENT_DECODER_CHANNELS = [64, 128, 160, 256]
-
 
 
 # -- Training Configuration --
 # Number of training epochs
 EPOCHS = 60
+# Optimizer
+OPTIMIZER_NAME = "AdamW"
 # Base learning rate for the encoder (lower than decoder's, fine  tuning)
 LEARNING_RATE_ENCODER = 1e-5
 # Base learning rate for the decoder
@@ -50,6 +56,10 @@ MIN_LEARNING_RATE = 1e-6
 BATCH_SIZE = 8
 # Number of workers for dataset loader
 NUM_WORKERS = 2
+
+# -- Loss funnciton
+# Options: 'CombinedDistillationLoss', 'SimpleDistillationLoss'
+LOSS_STRATEGY = "CombinedDistillationLoss"
 
 # -- Loss Function Weights --
 # Weight for the Scale-Invariant Log (SILog) loss
@@ -77,6 +87,6 @@ IMGNET_NORMALIZE_STD = [0.229, 0.224, 0.225]
 
 # -- Checkpoint and Seeds --
 # Directory to save model checkpoints
-CHECKPOINT_DIR = 'checkpoints'
+CHECKPOINT_DIR = "checkpoints"
 # Random seed for reproducibility
 RANDOM_SEED = 42

@@ -3,10 +3,9 @@ import os
 import sys
 import argparse
 
-from models.student_model import StudentDepthModel
+from models.factory import ModelFactory
 from config import config
 
-# to allow for absolute imports
 project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 sys.path.insert(0, project_root)
 
@@ -30,10 +29,7 @@ def convert_to_onnx(trained_model_path: str, output_dir: str, verbose: bool):
     
     # --- Load Model ---
     print("Loading the student model...")
-    model = StudentDepthModel(
-        feature_indices=config.STUDENT_FEATURE_INDICES,
-        decoder_channels=config.STUDENT_DECODER_CHANNELS
-        ).to(device)
+    model = ModelFactory.create_student_model(config).to(config.DEVICE)
     model.load_state_dict(torch.load(trained_model_path, map_location=device))
     model.eval()
     print("Model loaded successfully.")
@@ -84,7 +80,7 @@ if __name__ == '__main__':
     parser.add_argument(
         "--output_dir", 
         type=str, 
-        default="exports", 
+        default="export", 
         help="Directory to save the exported .onnx file. Defaults to 'exports/' in the project root."
     )
     

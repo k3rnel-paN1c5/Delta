@@ -4,6 +4,7 @@ import torch.nn.functional as F
 from transformers import AutoModelForDepthEstimation
 from typing import Tuple, List
 
+
 class TeacherWrapper(nn.Module):
     """
     A wrapper for the teacher depth estimation model (Depth-Anything-V2).
@@ -15,10 +16,13 @@ class TeacherWrapper(nn.Module):
     which serve as targets for training the student model via knowledge
     distillation.
     """
-    def __init__(self, model_id: str = 'depth-anything/depth-anything-v2-small-hf', 
-                cache_dir: str = None,
-                selected_features_indices: List[int] = [3, 5, 7, 11]
-        ):
+
+    def __init__(
+        self,
+        model_id: str = "depth-anything/depth-anything-v2-small-hf",
+        cache_dir: str = None,
+        selected_features_indices: List[int] = [3, 5, 7, 11],
+    ):
         """
         Initializes the TeacherWrapper.
 
@@ -32,7 +36,9 @@ class TeacherWrapper(nn.Module):
         super().__init__()
         self.model_id = model_id
         # Load the pre-trained depth estimation model
-        self.model = AutoModelForDepthEstimation.from_pretrained(model_id, cache_dir=cache_dir)
+        self.model = AutoModelForDepthEstimation.from_pretrained(
+            model_id, cache_dir=cache_dir
+        )
         # Set the model to evaluation mode, as we don't want to train it
         self.model.eval()
         self.selected_features_indices = selected_features_indices
@@ -77,13 +83,15 @@ class TeacherWrapper(nn.Module):
         # 3. Interpolate to Original Size
         # The model's output may be smaller than the input image, so we
         # interpolate it back to the original size.
-        final_depth = F.interpolate(normalized_depth, size=original_size, mode='bilinear', align_corners=False)
+        final_depth = F.interpolate(
+            normalized_depth, size=original_size, mode="bilinear", align_corners=False
+        )
 
         # 4. Select Feature Maps for Distillation
         # We select a subset of the hidden states to use as feature targets.
         # For ViT-based models like DINOv2, these indices correspond to the
         # outputs of different blocks in the encoder.
-        
+
         selected_features = [hidden_states[i] for i in self.selected_features_indices]
 
         # 5. Reshape ViT Features
@@ -100,7 +108,9 @@ class TeacherWrapper(nn.Module):
             # The first token in the sequence is the [CLS] token, which we remove
             image_patch_tokens = feature_map[:, 1:, :]
             # Reshape the sequence of patch tokens into a 2D feature map
-            reshaped_map = image_patch_tokens.transpose(1, 2).reshape(batch_size, num_channels, H_grid, W_grid)
+            reshaped_map = image_patch_tokens.transpose(1, 2).reshape(
+                batch_size, num_channels, H_grid, W_grid
+            )
             reshaped_features.append(reshaped_map)
 
         return final_depth, reshaped_features

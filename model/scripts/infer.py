@@ -14,15 +14,16 @@ import torch
 import os
 import argparse
 from PIL import Image
-from torchvision import transforms
 import matplotlib.pyplot as plt
 
 import sys
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 from config import config
 from utils.transforms import get_eval_transforms
 from models.student_model import StudentDepthModel
 from utils.visuals import apply_color_map
+
 
 def infer(args):
     """
@@ -44,7 +45,11 @@ def infer(args):
 
     # --- 3. Get list of images to process ---
     if os.path.isdir(args.input_path):
-        image_paths = [os.path.join(args.input_path, f) for f in os.listdir(args.input_path) if f.endswith(('png', 'jpg', 'jpeg'))]
+        image_paths = [
+            os.path.join(args.input_path, f)
+            for f in os.listdir(args.input_path)
+            if f.endswith(("png", "jpg", "jpeg"))
+        ]
     else:
         image_paths = [args.input_path]
 
@@ -61,7 +66,7 @@ def infer(args):
         for img_path in image_paths:
             print(f"Processing: {img_path}")
             try:
-                image = Image.open(img_path).convert('RGB')
+                image = Image.open(img_path).convert("RGB")
                 input_tensor = transform(image).unsqueeze(0).to(device)
 
                 # --- 6. Run inference ---
@@ -69,21 +74,41 @@ def infer(args):
                 predicted_depth = predicted_depth.squeeze().cpu().numpy()
 
                 # --- 7. Visualize and save the output ---
-                output_filename = os.path.splitext(os.path.basename(img_path))[0] + "_depth.png"
+                output_filename = (
+                    os.path.splitext(os.path.basename(img_path))[0] + "_depth.png"
+                )
                 output_filepath = os.path.join(args.output_path, output_filename)
 
                 colored_depth = apply_color_map(predicted_depth)
-                plt.imsave(output_filepath, colored_depth, cmap='inferno')
+                plt.imsave(output_filepath, colored_depth, cmap="inferno")
                 print(f"Saved depth map to: {output_filepath}")
 
             except Exception as e:
                 print(f"Could not process {img_path}. Error: {e}")
 
-if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description="Inference script for Student Depth Estimation Model")
-    parser.add_argument('--model-path', type=str, required=True, help="Path to the trained student model (.pth file)")
-    parser.add_argument('--input-path', type=str, required=True, help="Path to an input image or a directory of images")
-    parser.add_argument('--output-path', type=str, default='../output', help="Directory to save the output depth maps")
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(
+        description="Inference script for Student Depth Estimation Model"
+    )
+    parser.add_argument(
+        "--model-path",
+        type=str,
+        required=True,
+        help="Path to the trained student model (.pth file)",
+    )
+    parser.add_argument(
+        "--input-path",
+        type=str,
+        required=True,
+        help="Path to an input image or a directory of images",
+    )
+    parser.add_argument(
+        "--output-path",
+        type=str,
+        default="../output",
+        help="Directory to save the output depth maps",
+    )
 
     args = parser.parse_args()
     infer(args)

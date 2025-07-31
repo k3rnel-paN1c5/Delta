@@ -9,7 +9,10 @@ from PIL import Image
 from config import config
 from models.student_model import StudentDepthModel
 from models.teacher_model import TeacherWrapper
+from models.factory import ModelFactory
 from criterions.criterion import DistillationLoss
+from criterions.factory import CriterionFactory
+from utils.factory import OptimizerFactory
 from datasets.data_loader import UnlabeledImageDataset
 from torch.utils.data import DataLoader
 from unittest.mock import patch
@@ -58,10 +61,11 @@ class TestTrainingPipeline(unittest.TestCase):
         # --- 2. Setup Real Components ---
         device = config.DEVICE
         
-        student_model = StudentDepthModel(pretrained=True).to(device)
-        teacher_model = TeacherWrapper().to(device)
-        criterion = DistillationLoss()
-        optimizer = torch.optim.Adam(student_model.parameters(), lr=1e-4)
+        student_model = ModelFactory.create_student_model(config).to(device)
+        teacher_model = ModelFactory.create_teacher_model(config).to(device)
+        criterion = CriterionFactory.create_criterion(config).to(device)
+        optimizer = OptimizerFactory.create_optimizer(student_model, config)
+    
 
         # Create a dataset and dataloader with our fake data
         # We pass a simple transform that just converts to a tensor
@@ -86,7 +90,7 @@ class TestTrainingPipeline(unittest.TestCase):
         teacher_depth, teacher_features = teacher_model(images)
         
         # Loss calculation
-        loss = criterion(student_depth, teacher_depth, student_features, teacher_features)
+        loss = criterion(student_depth, teacher_depth, None, None, student_features, teacher_features)
 
         # Backward pass and optimizer step
         loss.backward()

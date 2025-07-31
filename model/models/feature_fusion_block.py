@@ -1,6 +1,7 @@
 import torch
 import torch.nn as nn
 
+
 class FeatureFusionBlock(nn.Module):
     """
     A block that fuses features from two different sources.
@@ -10,6 +11,7 @@ class FeatureFusionBlock(nn.Module):
     via a skip connection. The features are concatenated along the channel
     dimension and then refined using a series of convolutional layers.
     """
+
     def __init__(self, channels: int):
         """
         Initializes the FeatureFusionBlock.
@@ -19,7 +21,7 @@ class FeatureFusionBlock(nn.Module):
                             The output will also have this many channels.
         """
         super().__init__()
-        
+
         # Convolutional layers to process the fused features
         self.conv = nn.Sequential(
             # The input to this conv layer has 2 * channels because we concatenate two feature maps
@@ -32,7 +34,9 @@ class FeatureFusionBlock(nn.Module):
             nn.ReLU(),
         )
 
-    def forward(self, higher_level_features: torch.Tensor, skip_features: torch.Tensor) -> torch.Tensor:
+    def forward(
+        self, higher_level_features: torch.Tensor, skip_features: torch.Tensor
+    ) -> torch.Tensor:
         """
         Forward pass of the FeatureFusionBlock.
 

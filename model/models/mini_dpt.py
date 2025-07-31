@@ -5,6 +5,7 @@ from typing import Tuple, List
 from .upsample_block import UpsampleBlock
 from .feature_fusion_block import FeatureFusionBlock
 
+
 class MiniDPT(nn.Module):
     """
     A lightweight, DPT-inspired decoder for monocular depth estimation.
@@ -14,6 +15,7 @@ class MiniDPT(nn.Module):
     depth map. The architecture is inspired by the Dense Prediction Transformer (DPT)
     but is simplified for use with a lightweight backbone like MobileViT.
     """
+
     def __init__(self, encoder_channels: List[int], decoder_channels: List[int]):
         """
         Initializes the MiniDPT decoder.
@@ -33,10 +35,12 @@ class MiniDPT(nn.Module):
         super().__init__()
 
         if len(encoder_channels) != len(decoder_channels):
-            raise ValueError("Encoder and decoder channel lists must have the same length.")
+            raise ValueError(
+                "Encoder and decoder channel lists must have the same length."
+            )
 
         # Reverse for processing from high-level to low-level
-        encoder_channels = encoder_channels[::-1] 
+        encoder_channels = encoder_channels[::-1]
         decoder_channels = decoder_channels[::-1]
 
         # 1. Projection Convolutions
@@ -44,11 +48,18 @@ class MiniDPT(nn.Module):
         # channels specified for the decoder.
         self.projection_convs = nn.ModuleList()
         for i in range(len(encoder_channels)):
-            self.projection_convs.append(nn.Sequential(
-                nn.Conv2d(encoder_channels[i], decoder_channels[i], kernel_size=1, bias=False),
-                nn.BatchNorm2d(decoder_channels[i]),
-                nn.ReLU(inplace=True),
-            ))
+            self.projection_convs.append(
+                nn.Sequential(
+                    nn.Conv2d(
+                        encoder_channels[i],
+                        decoder_channels[i],
+                        kernel_size=1,
+                        bias=False,
+                    ),
+                    nn.BatchNorm2d(decoder_channels[i]),
+                    nn.ReLU(inplace=True),
+                )
+            )
 
         # 2. Upsampling and Fusion Blocks
         # These blocks are used to upsample the features from a higher decoder
@@ -59,23 +70,29 @@ class MiniDPT(nn.Module):
 
         for i in range(len(decoder_channels) - 1):
             # Upsample from the current decoder channel count to the next (lower) one
-            self.upsample_blocks.append(UpsampleBlock(decoder_channels[i], decoder_channels[i+1]))
+            self.upsample_blocks.append(
+                UpsampleBlock(decoder_channels[i], decoder_channels[i + 1])
+            )
             # Fusion block takes the upsampled features and the projected skip connection
-            self.fusion_blocks.append(FeatureFusionBlock(decoder_channels[i+1]))
+            self.fusion_blocks.append(FeatureFusionBlock(decoder_channels[i + 1]))
 
         # 3. Prediction Head
         # This final part of the decoder takes the fused features from the last
         # stage and produces the final single-channel depth map.
         self.prediction_head = nn.Sequential(
-            nn.Conv2d(decoder_channels[-1], decoder_channels[-1] // 2, kernel_size=3, padding=1),
+            nn.Conv2d(
+                decoder_channels[-1],
+                decoder_channels[-1] // 2,
+                kernel_size=3,
+                padding=1,
+            ),
             nn.ReLU(inplace=True),
-            nn.Upsample(scale_factor=2, mode='bilinear', align_corners=False),
+            nn.Upsample(scale_factor=2, mode="bilinear", align_corners=False),
             nn.Conv2d(decoder_channels[-1] // 2, 32, kernel_size=3, padding=1),
             nn.ReLU(inplace=True),
             nn.Conv2d(32, 1, kernel_size=1),
-            nn.Sigmoid()
+            nn.Sigmoid(),
         )
-
 
     def forward(self, encoder_features: List[torch.Tensor]) -> torch.Tensor:
         """
@@ -89,12 +106,14 @@ class MiniDPT(nn.Module):
         Returns:
             torch.Tensor: The final predicted depth map.
         """
-        
+
         # Reverse the features to process from the highest level to the lowest
         features = encoder_features[::-1]
 
         # Project all encoder features to the decoder's channel dimensions
-        projected_features = [self.projection_convs[i](features[i]) for i in range(len(features))]
+        projected_features = [
+            self.projection_convs[i](features[i]) for i in range(len(features))
+        ]
 
         # Start with the highest-level (most abstract) feature map
         current_features = projected_features[0]
@@ -102,7 +121,7 @@ class MiniDPT(nn.Module):
         # Iteratively upsample and fuse with lower-level skip connections
         for i in range(len(self.fusion_blocks)):
             upsampled = self.upsample_blocks[i](current_features)
-            skip_connection = projected_features[i+1]
+            skip_connection = projected_features[i + 1]
             current_features = self.fusion_blocks[i](upsampled, skip_connection)
 
         # Generate final prediction using the prediction head

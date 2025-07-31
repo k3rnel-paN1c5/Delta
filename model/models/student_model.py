@@ -5,6 +5,7 @@ from typing import Tuple, List
 
 from .mini_dpt import MiniDPT
 
+
 class StudentDepthModel(nn.Module):
     """
     The student model for monocular depth estimation.
@@ -15,9 +16,13 @@ class StudentDepthModel(nn.Module):
     devices. The training is done via knowledge distillation from a larger,
     more powerful teacher model.
     """
-    def __init__(self, feature_indices: Tuple[int, ...] = (0, 1, 2, 3), 
-                 decoder_channels: Tuple[int, ...] = (64, 128, 160, 256), 
-                 pretrained: bool = True):
+
+    def __init__(
+        self,
+        feature_indices: Tuple[int, ...] = (0, 1, 2, 3),
+        decoder_channels: Tuple[int, ...] = (64, 128, 160, 256),
+        pretrained: bool = True,
+    ):
         """
         Initializes the StudentDepthModel.
 
@@ -32,16 +37,18 @@ class StudentDepthModel(nn.Module):
         """
         super().__init__()
         if len(feature_indices) != len(decoder_channels):
-            raise ValueError("The number of feature indices must match the number of decoder channel dimensions.")
-        
+            raise ValueError(
+                "The number of feature indices must match the number of decoder channel dimensions."
+            )
+
         # 1. Instantiate the Encoder
         # We use the `timm` library to create a pre-trained encoder.
         # `features_only=True` makes the model return a List of feature maps
         # at different stages, instead of a final classification output.
         self.encoder = timm.create_model(
-            'mobilevit_xs',
+            "mobilevit_xs",
             pretrained=pretrained,
-            features_only=True, # This returns a List of feature maps
+            features_only=True,  # This returns a List of feature maps
         )
         self.feature_indices = feature_indices
 

@@ -17,7 +17,7 @@ except ImportError:
 
 # Import the function and components to be tested
 from utils.pth2onnx import convert_to_onnx
-from models.student_model import StudentDepthModel
+from models.factory import ModelFactory
 from config import config
 
 class TestPthToOnnxConversion(unittest.TestCase):
@@ -37,10 +37,7 @@ class TestPthToOnnxConversion(unittest.TestCase):
         self.output_dir = os.path.join(self.test_dir, 'exports')
 
         # Create a dummy StudentDepthModel instance
-        dummy_model = StudentDepthModel(
-            feature_indices=config.STUDENT_FEATURE_INDICES,
-            decoder_channels=config.STUDENT_DECODER_CHANNELS
-        ).to(config.DEVICE)
+        dummy_model = ModelFactory.create_student_model(config).to(config.DEVICE)
         dummy_model.eval()
 
         # Save the dummy model's state dictionary to a .pth file
