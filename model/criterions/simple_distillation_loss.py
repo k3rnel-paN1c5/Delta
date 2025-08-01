@@ -4,7 +4,7 @@ from .criterion import LossStrategy
 
 
 class SimpleDistillationLoss(LossStrategy):
-    """A strategy focusing only on matching final depth maps."""
+    """A strategy focusing only on matching final depth maps with MSE."""
 
     def calculate(
         self,
