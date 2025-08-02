@@ -30,11 +30,20 @@ class UpsampleBlock(nn.Module):
         # Convolutional layers to refine the upsampled features
         self.conv = nn.Sequential(
             # First 3x3 convolution
-            nn.Conv2d(in_channels, out_channels, kernel_size=3, padding=1, bias=False),
+            nn.Conv2d(in_channels, in_channels, kernel_size=3, padding=1, groups=in_channels, bias=False),
+            nn.BatchNorm2d(in_channels),
+            nn.ReLU(),
+            # Second 1x1 convolution
+            nn.Conv2d(in_channels, out_channels, kernel_size=1, bias=False),
             nn.BatchNorm2d(out_channels),
             nn.ReLU(),
-            # Second 3x3 convolution
-            nn.Conv2d(out_channels, out_channels, kernel_size=3, padding=1, bias=False),
+            
+            # (This second block operates on out_channels)
+            nn.Conv2d(out_channels, out_channels, kernel_size=3, padding=1, groups=out_channels, bias=False),
+            nn.BatchNorm2d(out_channels),
+            nn.ReLU(),
+            
+            nn.Conv2d(out_channels, out_channels, kernel_size=1, bias=False),
             nn.BatchNorm2d(out_channels),
             nn.ReLU(),
         )

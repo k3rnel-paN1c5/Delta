@@ -107,7 +107,7 @@ class CombinedDistillationLoss(LossStrategy):
         self.lambda_silog = kwargs["lambda_silog"]
         self.lambda_grad = kwargs["lambda_grad"]
         self.lambda_feat = kwargs["lambda_feat"]
-        self.lambda_attn = kwargs["lambda_attnda_feat"]
+        self.lambda_attn = kwargs["lambda_attn"]
         self.alpha = kwargs["alpha"]
 
         self.device = student_depth.device

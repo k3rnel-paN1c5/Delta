@@ -67,10 +67,10 @@ LAMBDA_SILOG = 1.0
 # Weight for the Gradient Matching loss
 LAMBDA_GRAD = 1.0
 # Weight for the Feature Matching (distillation) loss
-LAMBDA_FEAT = 0.5
+LAMBDA_FEAT = 0.6
 # Weight for the Attention Matching (distillation) loss
 LAMBDA_ATTN = 0.5
-ALPHA = 0.5
+ALPHA = 1.0
 
 
 # -- Data Transformation --

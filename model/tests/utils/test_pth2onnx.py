@@ -16,7 +16,7 @@ except ImportError:
     ONNX_AVAILABLE = False
 
 # Import the function and components to be tested
-from utils.pth2onnx import convert_to_onnx
+from scripts.pth2onnx import convert_to_onnx
 from models.factory import ModelFactory
 from config import config
 
