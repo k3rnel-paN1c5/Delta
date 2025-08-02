@@ -5,7 +5,7 @@ import '../models/app_state.dart';
 
 /// A button to trigger the depth estimation process.
 class EstimationButton extends StatelessWidget {
-  final VoidCallback onPressed;
+  final VoidCallback? onPressed;
 
   const EstimationButton({super.key, required this.onPressed});
 
@@ -13,10 +13,7 @@ class EstimationButton extends StatelessWidget {
   Widget build(BuildContext context) {
     final appState = Provider.of<AppState>(context);
     return ElevatedButton.icon(
-      // Disable the button while processing OR if no image is selected.
-      onPressed: appState.isProcessing || appState.selectedImage == null
-          ? null
-          : onPressed,
+      onPressed: onPressed,
       icon: appState.isProcessing
           ? const SizedBox(
               width: 20,
@@ -35,6 +32,7 @@ class EstimationButton extends StatelessWidget {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
         textStyle: const TextStyle(fontSize: 18),
         backgroundColor: Colors.teal,
+        disabledBackgroundColor: Colors.teal.withAlpha(125),
       ),
     );
   }

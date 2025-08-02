@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:onnxruntime/onnxruntime.dart';
+import 'package:image_gallery_saver/image_gallery_saver.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 import '../models/app_state.dart';
 import '../services/depth_estimator.dart';
@@ -10,6 +12,7 @@ import '../widgets/estimation_button.dart';
 import '../widgets/image_picker_button.dart';
 import '../widgets/original_image_view.dart';
 import '../widgets/color_map_dropdown.dart';
+import '../widgets/save_button.dart';
 
 /// The main home page of the application.
 class DepthEstimationHomePage extends StatefulWidget {
@@ -23,21 +26,26 @@ class DepthEstimationHomePage extends StatefulWidget {
 class _DepthEstimationHomePageState extends State<DepthEstimationHomePage> {
   final ModelLoader _modelLoader = ModelLoader();
   late final DepthEstimator _depthEstimator;
+  bool _isModelLoading = true; // Start with loading state
   bool _isModelLoaded = false;
 
   @override
   void initState() {
     super.initState();
     OrtEnv.instance.init();
-    // Load the model after the first frame is rendered to not block startup.
+    // Load the model in an isolate after the first frame is rendered.
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _modelLoader.loadModel().then((session) {
         if (session != null) {
           setState(() {
             _depthEstimator = DepthEstimator(session);
             _isModelLoaded = true;
+            _isModelLoading = false; // Finished loading
           });
         } else if (mounted) {
+          setState(() {
+            _isModelLoading = false; // Finished loading (with error)
+          });
           _showErrorDialog(
             'Failed to load AI model. Please ensure the model file is correct and accessible.',
           );
@@ -56,6 +64,8 @@ class _DepthEstimationHomePageState extends State<DepthEstimationHomePage> {
   @override
   Widget build(BuildContext context) {
     final appState = Provider.of<AppState>(context);
+    final bool isReadyForEstimation = _isModelLoaded && !appState.isProcessing && appState.selectedImage != null;
+
 
     return Scaffold(
       appBar: AppBar(
@@ -79,9 +89,24 @@ class _DepthEstimationHomePageState extends State<DepthEstimationHomePage> {
             mainAxisAlignment: MainAxisAlignment.center,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: <Widget>[
+              if (_isModelLoading)
+                const Card(
+                  elevation: 2,
+                  child: Padding(
+                    padding: EdgeInsets.all(16.0),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        CircularProgressIndicator(),
+                        SizedBox(width: 20),
+                        Text("Loading AI Model..."),
+                      ],
+                    ),
+                  ),
+                ),
               _buildSectionTitle(context, 'Original Image'),
               const SizedBox(height: 16),
-              const ImagePickerButton(),
+              ImagePickerButton(enabled: !_isModelLoading),
               const SizedBox(height: 16),
               const OriginalImageView(),
               const SizedBox(height: 32),
@@ -98,7 +123,11 @@ class _DepthEstimationHomePageState extends State<DepthEstimationHomePage> {
               const SizedBox(height: 16),
               const DepthMapView(),
               const SizedBox(height: 32),
-              EstimationButton(onPressed: () => _runDepthEstimation(context)),
+              EstimationButton(
+                onPressed: isReadyForEstimation ? () => _runDepthEstimation(context) : null,
+              ),
+              const SizedBox(height: 16),
+              SaveButton(onPressed: _saveDepthMap)
             ],
           ),
         ),
@@ -169,6 +198,42 @@ class _DepthEstimationHomePageState extends State<DepthEstimationHomePage> {
 
     if (mounted) {
       appState.setDepthMap(depthMapBytes);
+    }
+  }
+
+  /// Saves the generated depth map to the device's gallery.
+  void _saveDepthMap() async {
+    final appState = Provider.of<AppState>(context, listen: false);
+    if (appState.depthMapImageBytes == null) {
+      _showSnackbar('No depth map to save.');
+      return;
+    }
+
+    final status = await Permission.storage.request();
+
+    if (status.isGranted) {
+      try {
+        final result = await ImageGallerySaver.saveImage(
+          appState.depthMapImageBytes!,
+          quality: 100, 
+          name: 'depth_map_${DateTime.now().millisecondsSinceEpoch}',
+        );
+
+        if (mounted && result['isSuccess']) {
+          _showSnackbar('Depth map saved to gallery!');
+        } else if (mounted) {
+          _showSnackbar('Failed to save depth map.');
+        }
+      } catch (e) {
+        if (mounted) {
+          _showErrorDialog('An error occurred while saving: $e');
+        }
+      }
+    } else {
+      _showSnackbar('Storage permission is required to save the image.');
+      if (status.isPermanentlyDenied) {
+        openAppSettings();
+      }
     }
   }
 

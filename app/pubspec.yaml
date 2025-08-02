@@ -35,6 +35,8 @@ dependencies:
   image_picker: ^1.1.2 # For picking images from gallery
   onnxruntime: ^1.4.1 # For Running the onnx model
   image: ^4.2.0 # For image processing (resizing, converting to bytes)s
+  image_gallery_saver: ^2.0.3
+  permission_handler: ^11.3.1
   logging: ^1.2.0 
 
   # The following adds the Cupertino Icons font to your application.

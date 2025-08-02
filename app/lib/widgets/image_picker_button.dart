@@ -7,7 +7,8 @@ import '../models/app_state.dart';
 
 /// A button that shows options to pick an image from the gallery or camera.
 class ImagePickerButton extends StatelessWidget {
-  const ImagePickerButton({super.key});
+  final bool enabled; // Add an 'enabled' flag
+  const ImagePickerButton({super.key, this.enabled = true});
 
   @override
   Widget build(BuildContext context) {
@@ -19,6 +20,8 @@ class ImagePickerButton extends StatelessWidget {
         padding: const EdgeInsets.symmetric(vertical: 15),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
         textStyle: const TextStyle(fontSize: 18),
+        disabledBackgroundColor: Theme.of(context).primaryColor.withAlpha(125),
+        disabledForegroundColor: Colors.white70,
       ),
     );
   }
