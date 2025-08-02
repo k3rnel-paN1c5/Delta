@@ -6,8 +6,9 @@ It performs the following steps:
 2.  Sets up an evaluation dataset from a specified directory of images, applying the necessary transformations.
 3.  Initializes a suite of standard depth estimation metrics.
 4.  Iterates through the dataset in batches, generating depth predictions from both the student and teacher models.
-5.  Computes and accumulates the depth metrics for each batch.
-6.  Calculates the average of all metrics over the entire dataset and prints the final results to the console.
+5.  Measures and records the inference time for both models.
+7.  Computes and accumulates the depth metrics for each batch.
+8.  Calculates the average of all metrics over the entire dataset and prints the final results to the console.
 
 This script is intended to be run from the command line, with arguments specifying the path to the trained model, the evaluation dataset, and the batch size.
 """
@@ -16,6 +17,7 @@ import torch
 import argparse
 from torch.utils.data import DataLoader
 from tqdm import tqdm
+import time
 import os
 
 import sys
@@ -70,16 +72,30 @@ def evaluate(args):
         "a3": 0.0,
     }
     num_samples = 0
+    total_student_time = 0.0
+    total_teacher_time = 0.0
 
     # --- 4. Evaluation loop ---
     with torch.no_grad():
         progress_bar = tqdm(eval_dataloader, desc="Evaluating")
         for images in progress_bar:
             images = images.to(device)
+            batch_size = images.size(0)
 
             # Get predictions
+            start_time = time.time()
             teacher_depth, _ = teacher_model(images)
+            if device == 'cuda':
+                torch.cuda.synchronize()
+            end_time = time.time()
+            total_teacher_time += (end_time - start_time)
+
+            start_time = time.time()
             student_depth, _ = student_model(images)
+            if device == 'cuda':
+                torch.cuda.synchronize()
+            end_time = time.time()
+            total_student_time += (end_time - start_time)
 
             # Compute metrics for the batch
             metrics = compute_depth_metrics(student_depth, teacher_depth)
@@ -91,7 +107,9 @@ def evaluate(args):
             num_samples += batch_size
 
     # --- 5. Calculate and print average metrics ---
-    avg_metrics = {key: total / num_samples for key, total in total_metrics.items()}
+    avg_metrics = {key: total / num_samples for key, total in total_metrics.items()} 
+    avg_student_time = total_student_time / num_samples
+    avg_teacher_time = total_teacher_time / num_samples
 
     print("\n--- Evaluation Results ---")
     print(f"Absolute Relative Difference (AbsRel): {avg_metrics['abs_rel']:.4f}")
@@ -101,8 +119,12 @@ def evaluate(args):
     print(f"Delta1 (a1): {avg_metrics['a1']:.4f}")
     print(f"Delta2 (a2): {avg_metrics['a2']:.4f}")
     print(f"Delta3 (a3): {avg_metrics['a3']:.4f}")
+    
     print("--------------------------\n")
-
+    print("--- Inference Time ---")
+    print(f"Average Student Inference Time: {avg_student_time:.4f} seconds/photo")
+    print(f"Average Teacher Inference Time: {avg_teacher_time:.4f} seconds/photo")
+    print("----------------------\n")
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
