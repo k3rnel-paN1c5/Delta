@@ -2,6 +2,7 @@ import timm
 import torch
 import torch.nn as nn
 from typing import Tuple, List
+from torch.quantization import fuse_modules
 
 from .mini_dpt import MiniDPT
 
@@ -86,3 +87,33 @@ class StudentDepthModel(nn.Module):
         # Pass the selected features to the decoder to get the depth map
         depth_map = self.decoder(selected_features)
         return depth_map, selected_features
+    
+    def forward_inference(self, x: torch.Tensor) -> torch.Tensor:
+        """
+        Forward pass for inference. Returns only the final depth map.
+        """
+        features = self.encoder(x)
+        selected_features = [features[i] for i in self.feature_indices]
+        return self.decoder(selected_features)
+
+    def fuse_model(self):
+        """
+        Fuses 'Conv-BN-ReLU' or 'Conv-BN' modules in the model for faster inference.
+        This should be called after loading weights and before exporting to ONNX.
+        """
+        print("Fusing modules for optimized inference...")
+        for module in self.decoder.modules():
+            if isinstance(module, nn.Sequential):
+                # The tool expects a list of layer names to fuse
+                # Example: fuse Conv-BN-ReLU in a block like ['conv1', 'bn1', 'relu1']
+                # We need to find these patterns in all our sequential blocks
+                # Note: This requires the layers in nn.Sequential to have names,
+                # which they do by default (0, 1, 2, ...).
+                
+                # Fusion for UpsampleBlock and FeatureFusionBlock
+                if len(module) == 6: # Pattern: Conv-BN-ReLU-Conv-BN-ReLU
+                    fuse_modules(module, [['0', '1', '2'], ['3', '4', '5']], inplace=True)
+                
+                # Fusion for MiniDPT projection layers
+                if len(module) == 3: # Pattern: Conv-BN-ReLU
+                    fuse_modules(module, ['0', '1', '2'], inplace=True)

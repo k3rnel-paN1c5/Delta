@@ -48,7 +48,7 @@ def infer(args):
         image_paths = [
             os.path.join(args.input_path, f)
             for f in os.listdir(args.input_path)
-            if f.endswith(("png", "jpg", "jpeg"))
+            if f.lower().endswith(("png", "jpg", "jpeg"))
         ]
     else:
         image_paths = [args.input_path]
