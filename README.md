@@ -24,7 +24,7 @@ For a more in-depth explanation of the model and the Flutter application, please
   * **Advanced Knowledge Distillation**: Implements a combined distillation loss function, using pixel-wise, gradient matching, scale-invariant, and feature-based losses to effectively transfer knowledge from the teacher's output and intermediate layers.
   * **End-to-End Pipeline**: Provides a full workflow from model training and evaluation to exporting for mobile deployment.
   * **Model Export**: Includes scripts to convert the trained PyTorch model to **ONNX** for mobile use.
-  * **Cross-Platform Mobile App**: A Flutter app for Android and iOS that lets you pick an image from your gallery and visualize the generated depth map in real-time.
+  * **Cross-Platform Mobile App**: A Flutter app for Android and iOS that lets you pick an image from your gallery and visualize the generated depth map in real-time, or lets you view a live depth camera.
 
 -----
 
@@ -130,7 +130,7 @@ python -m scripts.pth2onnx checkpoints/Delta.pth  --output_dir export --verbose
 
 **Setup & Run:**
 
-1.  **Place the Model**: Copy your generated `Delta.onnx` file and place it inside the `app/assets/` directory.
+1.  **Place the Model**: Copy your generated `Delta.onnx` file and place it inside the `app/assets/` directory. (the model is already in the assets for now)
 2.  **Get Dependencies**:
     ```bash
     # Navigate to the app directory

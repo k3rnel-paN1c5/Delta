@@ -2,7 +2,7 @@
 
 ## **Application Overview**
 
-This Flutter application serves as a demonstration for a lightweight, mobile-optimized depth estimation model. It provides users with an intuitive interface to select an image from their device's gallery or camera. Once an image is chosen, the application runs a pre-trained ONNX model to generate a depth map. The resulting depth information is visualized as an image, and users have the option to apply different color maps (like Grayscale or Viridis) to better interpret the output.
+This Flutter application serves as a demonstration for a lightweight, mobile-optimized depth estimation model. It provides users with an intuitive interface to select an image from their device's gallery or camera. Once an image is chosen, the application runs a pre-trained ONNX model to generate a depth map. The resulting depth information is visualized as an image, and users have the option to apply different color maps (like Grayscale or Viridis) to better interpret the output. The app provides live depth camera as well!
 
 The application is architecturally sound, featuring a clear separation of concerns, robust state management, and a focus on performance by offloading heavy computations to background isolates. It also includes both light and dark themes for an enhanced user experience.
 
