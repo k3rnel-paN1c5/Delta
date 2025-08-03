@@ -1,22 +1,26 @@
+import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import 'package:onnxruntime/onnxruntime.dart';
 import 'package:image_gallery_saver/image_gallery_saver.dart';
+import 'package:onnxruntime/onnxruntime.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:provider/provider.dart';
 
 import '../models/app_state.dart';
 import '../services/depth_estimator.dart';
 import '../services/model_loader.dart';
+import '../widgets/color_map_dropdown.dart';
 import '../widgets/depth_map_view.dart';
 import '../widgets/estimation_button.dart';
 import '../widgets/image_picker_button.dart';
 import '../widgets/original_image_view.dart';
-import '../widgets/color_map_dropdown.dart';
 import '../widgets/save_button.dart';
+import 'live_camera_page.dart';
 
 /// The main home page of the application.
 class DepthEstimationHomePage extends StatefulWidget {
-  const DepthEstimationHomePage({super.key});
+  final List<CameraDescription> cameras;
+
+  const DepthEstimationHomePage({super.key, required this.cameras});
 
   @override
   State<DepthEstimationHomePage> createState() =>
@@ -64,8 +68,8 @@ class _DepthEstimationHomePageState extends State<DepthEstimationHomePage> {
   @override
   Widget build(BuildContext context) {
     final appState = Provider.of<AppState>(context);
-    final bool isReadyForEstimation = _isModelLoaded && !appState.isProcessing && appState.selectedImage != null;
-
+    final bool isReadyForEstimation =
+        _isModelLoaded && !appState.isProcessing && appState.selectedImage != null;
 
     return Scaffold(
       appBar: AppBar(
@@ -124,13 +128,29 @@ class _DepthEstimationHomePageState extends State<DepthEstimationHomePage> {
               const DepthMapView(),
               const SizedBox(height: 32),
               EstimationButton(
-                onPressed: isReadyForEstimation ? () => _runDepthEstimation(context) : null,
+                onPressed:
+                    isReadyForEstimation ? () => _runDepthEstimation(context) : null,
               ),
               const SizedBox(height: 16),
               SaveButton(onPressed: _saveDepthMap)
             ],
           ),
         ),
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          // Navigate to the LiveCameraPage, passing the available cameras.
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => Provider.value(
+                value: _depthEstimator,
+                child: LiveCameraPage(cameras: widget.cameras),
+              ),
+            ),
+          );
+        },
+        child: const Icon(Icons.camera_alt),
       ),
     );
   }
@@ -215,7 +235,7 @@ class _DepthEstimationHomePageState extends State<DepthEstimationHomePage> {
       try {
         final result = await ImageGallerySaver.saveImage(
           appState.depthMapImageBytes!,
-          quality: 100, 
+          quality: 100,
           name: 'depth_map_${DateTime.now().millisecondsSinceEpoch}',
         );
 

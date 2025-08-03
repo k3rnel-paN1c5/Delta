@@ -27,11 +27,14 @@
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
 	<key>NSCameraUsageDescription</key>
-	<string>This app needs camera access to take photos for depth estimation.</string>
+	<string>This app needs camera access to take photos for depth estimation and Provide Live Camera Depth Estimation.</string>
 	<key>NSLocalNetworkUsageDescription</key>
 	<string>This app needs access to your local network.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>This app needs access to your photo library to pick images for depth estimation.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>This app does not require microphone access.</string>
+
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
 	<key>UILaunchStoryboardName</key>

@@ -9,9 +9,10 @@ class AppState extends ChangeNotifier {
   bool _isProcessing = false;
   bool _isImageLoading = false;
   String _inferenceTime = '';
-  String _selectedColorMap = 'Grayscale';
+  String _selectedColorMap = 'Viridis';
   ThemeMode _themeMode = ThemeMode.system;
   dynamic _rawDepthMap;
+  Uint8List? _liveDepthMapBytes;
 
   // Getters for the private state variables.
   File? get selectedImage => _selectedImage;
@@ -22,19 +23,28 @@ class AppState extends ChangeNotifier {
   String get selectedColorMap => _selectedColorMap;
   ThemeMode get themeMode => _themeMode;
   dynamic get rawDepthMap => _rawDepthMap;
+  Uint8List? get liveDepthMapBytes => _liveDepthMapBytes;
+
 
   /// Sets the selected image and resets related states.
   void setSelectedImage(File? image) {
     _selectedImage = image;
     _depthMapImageBytes = null;
+    _liveDepthMapBytes = null; 
     _rawDepthMap = null;
     _inferenceTime = '';
     notifyListeners();
   }
 
-  /// Sets the generated depth map image bytes.
+  /// Sets the generated depth map image bytes for the static image view.
   void setDepthMap(Uint8List? bytes) {
     _depthMapImageBytes = bytes;
+    notifyListeners();
+  }
+
+  /// Sets the generated depth map for the live camera view.
+  void setLiveDepthMap(Uint8List? bytes) {
+    _liveDepthMapBytes = bytes;
     notifyListeners();
   }
 

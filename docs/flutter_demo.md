@@ -35,6 +35,7 @@ This file defines the central state management for the application.
         * `_inferenceTime`: A string to display the model's processing time.
         * `_selectedColorMap`: The currently active color map ('Grayscale' or 'Viridis').
         * `_themeMode`: The current `ThemeMode` (light, dark, or system).
+        *  `_liveDepthMapBytes` :
     * **State Modifiers**: It provides public methods (`setSelectedImage`, `setProcessing`, etc.) to modify the state. Crucially, each of these methods calls `notifyListeners()`, which signals to all listening widgets that they need to rebuild with the new state.
 
 ---
@@ -62,12 +63,17 @@ This service contains the core logic for performing depth estimation and process
 * **Isolate Functions**: To avoid freezing the UI thread during heavy computations, this file defines two top-level functions designed to be run in background isolates via `compute()`:
     * **`_processImageForModel()`**: Takes an image path, decodes it, resizes it to the required 384x384 dimensions, and normalizes it according to the model's requirements (ImageNet mean/std). This returns a `Float32List` ready to be fed into the model.
     * **`_applyColorMapIsolate()`**: Takes the raw numerical output from the model, normalizes the depth values to a 0-1 range, and applies the selected color map (Grayscale or Viridis) pixel by pixel to generate a `Uint8List` representing the final PNG image.
+    * **`_processCameraFrame()`**: Takes a Camera Image, converts it from YUV/BGRA fromat to RGB, then resizes and normalise it just like the `_processImageForMode()` functio does.
 * **`DepthEstimator` class**: Orchestrates the entire estimation pipeline.
     * **`runDepthEstimation()` method**:
         1.  Calls `_processImageForModel` in an isolate.
         2.  Runs the model asynchronously with the processed input.
         3.  Times the inference process using a `Stopwatch`.
         4.  Returns a map containing the raw model output (`rawDepthMap`) and the `inferenceTime`.
+    * **`runDepthEstimationOnFrame`() method**:
+        1.  Calls `_processCameraFrame` in an isolate.
+        2.  Runs the model asynchronously with the processed input.
+        3.  Returns a map containing the raw model output (`rawDepthMap`)
     * **`applyColorMap()` method**:
         1.  Calls `_applyColorMapIsolate` in an isolate.
         2.  Returns the final, colorized depth map image bytes.
@@ -80,10 +86,20 @@ This file defines the main UI screen of the application.
 
 * **`DepthEstimationHomePage`**: A `StatefulWidget` that constructs the main view and interacts with the services and state.
     * **`initState()`**: Initializes the `OrtEnv` and asynchronously loads the model using `ModelLoader`. The model loading is deferred until after the first frame to ensure a smooth app startup.
-    * **`build()`**: Constructs the UI by assembling the various widgets (`ImagePickerButton`, `OriginalImageView`, `DepthMapView`, etc.). It uses a `SingleChildScrollView` to prevent overflow on smaller screens. It also includes the theme-toggle `IconButton` in the `AppBar`.
+    * **`build()`**: Constructs the UI by assembling the various widgets (`ImagePickerButton`, `OriginalImageView`, `DepthMapView`, etc.). It uses a `SingleChildScrollView` to prevent overflow on smaller screens. It also includes the theme-toggle `IconButton` in the `AppBar` and a `FloatingActionButton` to open the live camera screen.
     * **`_runDepthEstimation()`**: The core logic triggered by the user. It orchestrates the calls to the `DepthEstimator` and updates the `AppState` with the results. It handles UI states like showing loading indicators and displaying errors.
     * **`_applyColorMapAndUpdateView()`**: A helper function to regenerate the depth map view when the color map is changed.
     * **Error Handling**: Includes helper methods (`_showSnackbar`, `_showErrorDialog`) to provide clear feedback to the user in case of failures.
+
+---
+### **`lib/screens/live_camera_page.dart`**
+
+This file defines the UI screen of the Live depth camera screen.
+
+* **`LiveCameraPage`**: A `StatefulWidget` that constructs the main view and interacts with the services and state.
+    * **`initState()`**: Initializes the `CameraController` and starts streaming images to the processor.
+    * **`_processCameraImage()`**: The core logic triggered by the user. It orchestrates the calls to the `DepthEstimator` and updates the `AppState` with the results.
+    * **`build()`**: Construct the UI of the screen
 
 ---
 

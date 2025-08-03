@@ -37,6 +37,7 @@ dependencies:
   image: ^4.2.0 # For image processing (resizing, converting to bytes)s
   image_gallery_saver: ^2.0.3
   permission_handler: ^11.3.1
+  camera: ^0.10.5+9
   logging: ^1.2.0 
 
   # The following adds the Cupertino Icons font to your application.
