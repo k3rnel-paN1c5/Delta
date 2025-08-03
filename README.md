@@ -9,7 +9,13 @@ For a more in-depth explanation of the model and the Flutter application, please
   * [**Model Documentation**](docs/model_docs.md)
   * [**Flutter App Documentation**](docs/model_docs.md)
 
------
+---
+
+## Preview
+
+![teaser](docs/Teaser.png)
+
+---
 
 ## ✨ Key Features
 
