@@ -147,6 +147,66 @@ python -m scripts.pth2onnx checkpoints/Delta.pth  --output_dir export --verbose
 
 The app will launch, allowing you to select an image and view the resulting depth map rendered with a viridis/grayscale colormap.
 
+## Acknowledgements
+
+This project utilizes the `Depth Anything V2` model as the teacher model for knowledge distillation. The success of our student model is heavily reliant on the incredible work done by the authors of Depth Anything. We sincerely thank them for making their research and models publicly available.
+
+If you use or find this work inspiring, please consider citing the original papers:
+<!-- 
+**Depth Anything V2:**
+```bibtex
+@article{depth_anything_v2,
+  title={Depth Anything V2},
+  author={Yang, Lihe and Kang, Bingyi and Huang, Zilong and Zhao, Zhen and Xu, Xiaogang and Feng, Jiashi and Zhao, Hengshuang},
+  journal={arXiv:2406.09414},
+  year={2024}
+}
+```
+**Depth Anything V2:**
+```bibtex
+@inproceedings{depth_anything_v1,
+  title={Depth Anything: Unleashing the Power of Large-Scale Unlabeled Data}, 
+  author={Yang, Lihe and Kang, Bingyi and Huang, Zilong and Xu, Xiaogang and Feng, Jiashi and Zhao, Hengshuang},
+  booktitle={CVPR},
+  year={2024}
+}
+``` -->
+
+**1. Depth Anything V1**
+> Yang, L., Kang, B., Huang, Z., Xu, X., Feng, J., & Zhao, H. (2024). *Depth Anything: Unleashing the Power of Large-Scale Unlabeled Data*. Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR).
+
+<details>
+
+<summary>BibTeX</summary>
+
+```bibtex
+@inproceedings{depth_anything_v1, 
+   title={Depth Anything: Unleashing the Power of Large-Scale Unlabeled Data},  
+   author={Yang, Lihe and Kang, Bingyi and Huang, Zilong and Xu, Xiaogang and Feng, Jiashi and Zhao, Hengshuang}, 
+   booktitle={CVPR}, 
+   year={2024} 
+}
+```
+</details>
+
+**1. Depth Anything V2**
+> Yang, L., Kang, B., Huang, Z., Zhao, Z., Xu, X., Feng, J., & Zhao, H. (2024). *Depth Anything V2*. arXiv:2406.09414.
+
+<details>
+
+<summary>BibTeX</summary>
+
+```bibtex
+@article{depth_anything_v2, 
+   title={Depth Anything V2}, 
+   author={Yang, Lihe and Kang, Bingyi and Huang, Zilong and Zhao, Zhen and Xu, Xiaogang and Feng, Jiashi and Zhao, Hengshuang}, 
+   journal={arXiv:2406.09414}, 
+   year={2024} 
+}
+```
+
+</details>
+
 ## 🐛 Bug Reports & Feature Requests
 
 Have a bug or a feature request? Please open a new issue via the [Issues tab](https://https://github.com/k3rnel-paN1c5/Delta/issues).

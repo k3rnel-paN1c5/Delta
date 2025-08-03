@@ -1,3 +1,27 @@
+"""
+Teacher model wrapper for the Depth Anything V2 model.
+
+This implementation wraps the Hugging Face implementation of Depth Anything V2
+to serve as the teacher model in our knowledge distillation pipeline.
+
+Full credit goes to the original authors. For more details, please see:
+https://huggingface.co/depth-anything/Depth-Anything-V2-Large-hf
+
+Citations:
+@article{depth_anything_v2,
+  title={Depth Anything V2},
+  author={Yang, Lihe and Kang, Bingyi and Huang, Zilong and Zhao, Zhen and Xu, Xiaogang and Feng, Jiashi and Zhao, Hengshuang},
+  journal={arXiv:2406.09414},
+  year={2024}
+}
+@inproceedings{depth_anything_v1,
+  title={Depth Anything: Unleashing the Power of Large-Scale Unlabeled Data},
+  author={Yang, Lihe and Kang, Bingyi and Huang, Zilong and Xu, Xiaogang and Feng, Jiashi and Zhao, Hengshuang},
+  booktitle={CVPR},
+  year={2024}
+}
+"""
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
