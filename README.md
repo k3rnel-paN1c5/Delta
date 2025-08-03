@@ -145,4 +145,8 @@ python -m scripts.pth2onnx checkpoints/Delta.pth  --output_dir export --verbose
     flutter run
     ```
 
-The app will launch, allowing you to select an image and view the resulting depth map rendered with a "viridis" colormap.
+The app will launch, allowing you to select an image and view the resulting depth map rendered with a viridis/grayscale colormap.
+
+## 🐛 Bug Reports & Feature Requests
+
+Have a bug or a feature request? Please open a new issue via the [Issues tab](https://https://github.com/k3rnel-paN1c5/Delta/issues).
