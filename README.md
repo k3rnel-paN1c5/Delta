@@ -112,7 +112,7 @@ python -m scripts.train
 1.  **Run Inference**: Use `scripts/infer.py` to test the trained model on sample images.
 
 ``` bash
-python -m scripts.infer --model-path checkpoints/Delta.pth --input-path data/Test
+python -m scripts.infer --model-path checkpoints/Delta.pth --input-path data/TestImages
 ```
 2.  **Export to ONNX**: Use the `scripts/pth2onnx.py` script to convert your trained PyTorch model (`.pth`) into the ONNX format.
 
