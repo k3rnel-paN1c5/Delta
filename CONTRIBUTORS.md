@@ -5,7 +5,7 @@
 
 ## Special Thanks to 
 
-* **Hala Abu Kassem** ([@hala1110](https://github.com/hala1110)) - For providing images for the dataset and feedback for the report.
+* **Hala Abu Kassem** ([@ladybug1111](https://github.com/ladybug1111)) - For providing images for the dataset and feedback for the report.
 * **Zeinab Rustom** ([@Zeinab13Rm](https://github.com/Zeinab13Rm)) - For providing images for the dataset.
 
 ---
