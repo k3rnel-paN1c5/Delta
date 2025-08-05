@@ -11,6 +11,7 @@ The script is executed via the command line and requires paths to the trained mo
 """
 
 import torch
+import torch.nn.functional as F
 import os
 import argparse
 from PIL import Image
@@ -67,11 +68,20 @@ def infer(args):
             print(f"Processing: {img_path}")
             try:
                 image = Image.open(img_path).convert("RGB")
+                original_size = image.size # Returns (width, height)
                 input_tensor = transform(image).unsqueeze(0).to(device)
 
                 # --- 6. Run inference ---
                 predicted_depth, _ = model(input_tensor)
-                predicted_depth = predicted_depth.squeeze().cpu().numpy()
+                
+                resized_depth = F.interpolate(
+                    predicted_depth,
+                    size=(original_size[1], original_size[0]),
+                    mode='bilinear',
+                    align_corners=False
+                )
+                
+                predicted_depth_numpy = resized_depth.squeeze().cpu().numpy()
 
                 # --- 7. Visualize and save the output ---
                 output_filename = (
@@ -79,8 +89,8 @@ def infer(args):
                 )
                 output_filepath = os.path.join(args.output_path, output_filename)
 
-                colored_depth = apply_color_map(predicted_depth)
-                plt.imsave(output_filepath, colored_depth, cmap="inferno")
+                colored_depth = apply_color_map(predicted_depth_numpy, cmap="viridis")
+                plt.imsave(output_filepath, colored_depth, cmap="viridis")
                 print(f"Saved depth map to: {output_filepath}")
 
             except Exception as e:

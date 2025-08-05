@@ -14,7 +14,7 @@ TRAIN_IMG_DIR = "data/raw"
 VAL_IMG_DIR = "data/raw"
 
 # Data Split ratio  (training/(training+validation))
-DATA_SPLIT = 0.7
+DATA_SPLIT = 0.8
 IMG_HEIGHT = 384
 IMG_WIDTH = 384
 
@@ -36,7 +36,8 @@ STUDENT_FEATURE_INDICES = [0, 1, 2, 3]
 # boolean to use pre trained weights
 USE_PRETRAINED = True
 # Channel dimensions for the MiniDPT decoder blocks
-STUDENT_DECODER_CHANNELS = [64, 128, 160, 256]
+## [64, 128, 160, 256]
+STUDENT_DECODER_CHANNELS =  [64, 128, 160, 256] # [96, 192, 256, 320]
 
 
 # -- Training Configuration --
@@ -49,7 +50,7 @@ LEARNING_RATE_ENCODER = 1e-5
 # Base learning rate for the decoder
 LEARNING_RATE_DECODER = 1e-3
 # Weight decay for the optimizer
-WEIGHT_DECAY = 1e-3
+WEIGHT_DECAY = 1e-4
 # Min learning rate for the schedular
 MIN_LEARNING_RATE = 1e-6
 # Batch size for training and validation
@@ -63,13 +64,13 @@ LOSS_STRATEGY = "CombinedDistillationLoss"
 
 # -- Loss Function Weights --
 # Weight for the Scale-Invariant Log (SILog) loss
-LAMBDA_SILOG = 1.0
+LAMBDA_SILOG = 1.5
 # Weight for the Gradient Matching loss
-LAMBDA_GRAD = 1.0
+LAMBDA_GRAD = 2.0
 # Weight for the Feature Matching (distillation) loss
-LAMBDA_FEAT = 0.6
+LAMBDA_FEAT = 0.4
 # Weight for the Attention Matching (distillation) loss
-LAMBDA_ATTN = 0.5
+LAMBDA_ATTN = 0.3
 ALPHA = 1.0
 
 
