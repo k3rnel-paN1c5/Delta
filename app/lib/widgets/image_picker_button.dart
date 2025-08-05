@@ -1,7 +1,10 @@
+import 'dart:io';
+import 'dart:math';
+
 import 'package:flutter/material.dart';
+import 'package:image/image.dart' as img_lib;
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
-import 'dart:io';
 
 import '../models/app_state.dart';
 
@@ -13,7 +16,7 @@ class ImagePickerButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ElevatedButton.icon(
-      onPressed: () => _showImageSourceDialog(context),
+      onPressed: enabled ? () => _showImageSourceDialog(context) : null,
       icon: const Icon(Icons.photo_library),
       label: const Text('Select Image'),
       style: ElevatedButton.styleFrom(
@@ -67,7 +70,33 @@ class ImagePickerButton extends StatelessWidget {
       final XFile? image = await picker.pickImage(source: source);
 
       if (image != null) {
-        appState.setSelectedImage(File(image.path));
+        final imageBytes = await image.readAsBytes();
+        final img_lib.Image? originalImage = img_lib.decodeImage(imageBytes);
+
+        if (originalImage != null) {
+          final int cropSize = min(originalImage.width, originalImage.height);
+          final int cropX = (originalImage.width - cropSize) ~/ 2;
+          final int cropY = (originalImage.height - cropSize) ~/ 2;
+
+          final img_lib.Image croppedImage = img_lib.copyCrop(
+            originalImage,
+            x: cropX,
+            y: cropY,
+            width: cropSize,
+            height: cropSize,
+          );
+
+          final Directory tempDir = Directory.systemTemp;
+          final String tempPath =
+              '${tempDir.path}/cropped_${DateTime.now().millisecondsSinceEpoch}.jpg';
+          final File croppedFile = File(tempPath)
+            ..writeAsBytesSync(img_lib.encodeJpg(croppedImage));
+
+          appState.setSelectedImage(croppedFile);
+        } else {
+          // If decoding fails, fall back to the original image file
+          appState.setSelectedImage(File(image.path));
+        }
       }
     } finally {
       // Ensure the loading indicator is turned off, even if the user cancels.

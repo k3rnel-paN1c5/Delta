@@ -1,4 +1,5 @@
 import 'dart:async';
+
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -27,7 +28,8 @@ class _LiveCameraPageState extends State<LiveCameraPage> {
       return;
     }
 
-    _controller = CameraController(widget.cameras[0], ResolutionPreset.high);
+    _controller = CameraController(widget.cameras[0], ResolutionPreset.high,
+        enableAudio: false);
     _controller.initialize().then((_) {
       if (!mounted) {
         return;
@@ -49,76 +51,122 @@ class _LiveCameraPageState extends State<LiveCameraPage> {
   }
 
   void _processCameraImage(CameraImage image) {
-    // If a frame is already being processed, skip this one.
     if (_isProcessingFrame) {
       return;
     }
 
-    // Set the flag to true and update the UI to show the indicator
-    setState(() {
-      _isProcessingFrame = true;
-    });
+    _isProcessingFrame = true;
 
     final appState = Provider.of<AppState>(context, listen: false);
     final depthEstimator = Provider.of<DepthEstimator>(context, listen: false);
 
-    // Run the entire processing pipeline in a non-blocking way
     Future<void> runPipeline() async {
       try {
         final result = await depthEstimator.runDepthEstimationOnFrame(image);
+        final int originalWidth = result['originalWidth'];
+        final int originalHeight = result['originalHeight'];
+
         final depthMapBytes = await depthEstimator.applyColorMap(
           result['rawDepthMap'],
           appState.selectedColorMap,
+          originalWidth,
+          originalHeight,
         );
 
-        // If the widget is still mounted, update the state with the new depth map
         if (mounted) {
           appState.setLiveDepthMap(depthMapBytes);
         }
       } catch (e) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Error processing frame: ${e.toString()}')),
-          );
-        }
+        debugPrint('Error processing frame: ${e.toString()}');
       } finally {
-        // Unset the flag in the setState callback to ensure UI updates
-        // after the flag is changed.
         if (mounted) {
-          setState(() {
-            _isProcessingFrame = false;
-          });
+          _isProcessingFrame = false;
         }
       }
     }
 
-    // Execute the pipeline
     runPipeline();
+  }
+
+  /// Helper widget to build section titles, similar to HomePage.
+  Widget _buildSectionTitle(BuildContext context, String title) {
+    return Text(
+      title,
+      style: Theme.of(context).textTheme.headlineSmall,
+      textAlign: TextAlign.center,
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     if (!_controller.value.isInitialized) {
-      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+      return Scaffold(
+        body: const Center(child: CircularProgressIndicator()),
+        appBar: AppBar(title: const Text('Live Depth Estimation')),
+      );
     }
     return Scaffold(
       appBar: AppBar(title: const Text('Live Depth Estimation')),
-      body: Stack(
-        fit: StackFit.expand,
-        children: [
-          Consumer<AppState>(
-            builder: (context, appState, child) {
-              if (appState.liveDepthMapBytes == null) {
-                return const SizedBox.shrink();
-              }
-              return Image.memory(
-                appState.liveDepthMapBytes!,
-                fit: BoxFit.cover,
-                gaplessPlayback: true, 
-              );
-            },
+      body: SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.all(24.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              _buildSectionTitle(context, 'Live Camera Feed'),
+              const SizedBox(height: 16),
+              Card(
+                elevation: 4,
+                clipBehavior: Clip.antiAlias, // This crops the content
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12)),
+                child: SizedBox(
+                  width: 384,
+                  height: 384,
+                  child: FittedBox(
+                    fit: BoxFit.cover,
+                    child: SizedBox(
+                      // Use the preview size for correct aspect ratio
+                      width: _controller.value.previewSize?.height ?? 1,
+                      height: _controller.value.previewSize?.width ?? 1,
+                      child: CameraPreview(_controller),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 32),
+              _buildSectionTitle(context, 'Live Depth Map'),
+              const SizedBox(height: 16),
+              Card(
+                elevation: 4,
+                clipBehavior: Clip.antiAlias,
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12)),
+                child: Container(
+                  width: 384,
+                  height: 384,
+                  alignment: Alignment.center,
+                  child: Consumer<AppState>(
+                    builder: (context, appState, child) {
+                      if (appState.liveDepthMapBytes == null) {
+                        return Text(
+                          'Waiting for depth map...',
+                          style: TextStyle(color: Colors.grey[600]),
+                        );
+                      }
+                      return Image.memory(
+                        appState.liveDepthMapBytes!,
+                        fit: BoxFit.cover,
+                        gaplessPlayback:
+                            true, // Reduces flicker between frames
+                      );
+                    },
+                  ),
+                ),
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }

@@ -185,6 +185,8 @@ class _DepthEstimationHomePageState extends State<DepthEstimationHomePage> {
       final result = await _depthEstimator.runDepthEstimation(
         appState.selectedImage!,
       );
+      appState.setOriginalDimensions(
+          result['originalWidth'], result['originalHeight']);
       appState.setRawDepthMap(result['rawDepthMap']);
       appState.setInferenceTime(
         'Inference Time: ${result['inferenceTime']} ms',
@@ -212,8 +214,10 @@ class _DepthEstimationHomePageState extends State<DepthEstimationHomePage> {
 
     // The applyColorMap method now runs its logic in an isolate.
     final depthMapBytes = await _depthEstimator.applyColorMap(
-      appState.rawDepthMap,
+      appState.rawDepthMap!,
       appState.selectedColorMap,
+      appState.originalWidth!,
+      appState.originalHeight!,
     );
 
     if (mounted) {

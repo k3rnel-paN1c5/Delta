@@ -13,6 +13,8 @@ class AppState extends ChangeNotifier {
   ThemeMode _themeMode = ThemeMode.system;
   dynamic _rawDepthMap;
   Uint8List? _liveDepthMapBytes;
+  int? _originalWidth;
+  int? _originalHeight;
 
   // Getters for the private state variables.
   File? get selectedImage => _selectedImage;
@@ -24,7 +26,8 @@ class AppState extends ChangeNotifier {
   ThemeMode get themeMode => _themeMode;
   dynamic get rawDepthMap => _rawDepthMap;
   Uint8List? get liveDepthMapBytes => _liveDepthMapBytes;
-
+  int? get originalWidth => _originalWidth;
+  int? get originalHeight => _originalHeight;
 
   /// Sets the selected image and resets related states.
   void setSelectedImage(File? image) {
@@ -76,6 +79,11 @@ class AppState extends ChangeNotifier {
   void setSelectedColorMap(String colorMap) {
     _selectedColorMap = colorMap;
     notifyListeners();
+  }
+
+  void setOriginalDimensions(int width, int height) {
+    _originalWidth = width;
+    _originalHeight = height;
   }
 
   /// Toggles the theme between light and dark mode.
