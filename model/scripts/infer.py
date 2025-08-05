@@ -23,6 +23,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 from config import config
 from utils.transforms import get_eval_transforms
 from models.student_model import StudentDepthModel
+from utils.crop_aspect_ratio import crop_to_aspect_ratio
 from utils.visuals import apply_color_map
 
 
@@ -43,6 +44,7 @@ def infer(args):
     # --- 2. Define image transformations ---
     input_size = (config.IMG_HEIGHT, config.IMG_WIDTH)
     transform = get_eval_transforms(input_size)
+    target_aspect_ratio = config.IMG_WIDTH / config.IMG_HEIGHT
 
     # --- 3. Get list of images to process ---
     if os.path.isdir(args.input_path):
@@ -68,15 +70,19 @@ def infer(args):
             print(f"Processing: {img_path}")
             try:
                 image = Image.open(img_path).convert("RGB")
-                original_size = image.size # Returns (width, height)
-                input_tensor = transform(image).unsqueeze(0).to(device)
+                
+                cropped_image = crop_to_aspect_ratio(image, target_aspect_ratio)
+                cropped_size = cropped_image.size # Returns (width, height)
+                
+                # original_size = image.size # Returns (width, height)
+                input_tensor = transform(cropped_image).unsqueeze(0).to(device)
 
                 # --- 6. Run inference ---
                 predicted_depth, _ = model(input_tensor)
                 
                 resized_depth = F.interpolate(
                     predicted_depth,
-                    size=(original_size[1], original_size[0]),
+                    size=(cropped_size[1], cropped_size[0]),
                     mode='bilinear',
                     align_corners=False
                 )
