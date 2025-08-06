@@ -3,6 +3,8 @@ import 'package:flutter/services.dart';
 import 'package:logging/logging.dart';
 import 'package:onnxruntime/onnxruntime.dart';
 
+import '../config/app_config.dart';
+
 /// Loads the ONNX model from the assets.
 class ModelLoader {
   OrtSession? _session;
@@ -25,7 +27,7 @@ class ModelLoader {
         sessionOptions.appendNnapiProvider(NnapiFlags.useFp16);
       }
 
-      const assetFileName = 'assets/Delta.onnx';
+      const assetFileName = AppConfig.modelAssetPath;
       final rawAssetFile = await rootBundle.load(assetFileName);
       final bytes = rawAssetFile.buffer.asUint8List();
       _session = OrtSession.fromBuffer(bytes, sessionOptions);

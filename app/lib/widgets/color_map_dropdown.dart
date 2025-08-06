@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../config/app_config.dart';
 import '../models/app_state.dart';
 
 /// A dropdown to select the color map for the depth map visualization.
@@ -28,7 +29,7 @@ class ColorMapDropdown extends StatelessWidget {
               onColorMapChanged?.call(newValue);
             }
           },
-          items: <String>['Grayscale', 'Viridis'].map<DropdownMenuItem<String>>(
+          items: AppConfig.availableColorMaps.map<DropdownMenuItem<String>>(
             (String value) {
               return DropdownMenuItem<String>(value: value, child: Text(value));
             },

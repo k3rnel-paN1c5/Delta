@@ -5,18 +5,17 @@ import 'package:flutter/foundation.dart';
 import 'package:image/image.dart' as img_lib;
 import 'package:onnxruntime/onnxruntime.dart';
 
+import '../config/app_config.dart';
 import '../utils/color_maps.dart';
 
-// --- _processImageForModel and _processCameraFrame are CORRECT and UNCHANGED ---
-// (The manual center crop logic you helped fix is correct)
-typedef ProcessImageParams = (String imagePath, int inputHeight, int inputWidth);
+typedef ProcessImageParams = (Uint8List imageBytes, int inputHeight, int inputWidth);
+
 Future<Map<String, dynamic>> _processImageForModel(
     ProcessImageParams params) async {
-  final imagePath = params.$1;
+  final imageBytes = params.$1;
   final inputHeight = params.$2;
   final inputWidth = params.$3;
 
-  final imageBytes = await File(imagePath).readAsBytes();
   final originalImage = img_lib.decodeImage(imageBytes);
   if (originalImage == null) throw Exception('Failed to decode image.');
 
@@ -258,14 +257,14 @@ Future<Map<String, dynamic>> _processCameraFrame(
 class DepthEstimator {
     // ... (This class is CORRECT and UNCHANGED)
   final OrtSession _session;
-  final _inputHeight = 384;
-  final _inputWidth = 384;
+  final _inputHeight = AppConfig.modelInputHeight;
+  final _inputWidth = AppConfig.modelInputWidth;
 
   DepthEstimator(this._session);
 
-  Future<Map<String, dynamic>> runDepthEstimation(File imageFile) async {
+  Future<Map<String, dynamic>> runDepthEstimation(Uint8List imageBytes) async {
     final inputShapes = [1, 3, _inputHeight, _inputWidth];
-    final processParams = (imageFile.path, _inputHeight, _inputWidth);
+    final processParams = (imageBytes, _inputHeight, _inputWidth);
 
     final processedResult = await compute(_processImageForModel, processParams);
     final input = processedResult['input'] as Float32List;

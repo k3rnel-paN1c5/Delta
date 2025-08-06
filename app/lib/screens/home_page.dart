@@ -1,6 +1,11 @@
+import 'dart:math';
+import 'dart:typed_data';
+
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
+import 'package:image/image.dart' as img_lib;
 import 'package:image_gallery_saver/image_gallery_saver.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:onnxruntime/onnxruntime.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:provider/provider.dart';
@@ -8,12 +13,9 @@ import 'package:provider/provider.dart';
 import '../models/app_state.dart';
 import '../services/depth_estimator.dart';
 import '../services/model_loader.dart';
+import '../widgets/display_card.dart';
+import '../widgets/action_button.dart';
 import '../widgets/color_map_dropdown.dart';
-import '../widgets/depth_map_view.dart';
-import '../widgets/estimation_button.dart';
-import '../widgets/image_picker_button.dart';
-import '../widgets/original_image_view.dart';
-import '../widgets/save_button.dart';
 import 'live_camera_page.dart';
 
 /// The main home page of the application.
@@ -69,7 +71,8 @@ class _DepthEstimationHomePageState extends State<DepthEstimationHomePage> {
   Widget build(BuildContext context) {
     final appState = Provider.of<AppState>(context);
     final bool isReadyForEstimation =
-        _isModelLoaded && !appState.isProcessing && appState.selectedImage != null;
+        _isModelLoaded && !appState.isProcessing && appState.selectedImageBytes != null;
+     final brightness = Theme.of(context).brightness;
 
     return Scaffold(
       appBar: AppBar(
@@ -78,11 +81,11 @@ class _DepthEstimationHomePageState extends State<DepthEstimationHomePage> {
         actions: [
           IconButton(
             icon: Icon(
-              appState.themeMode == ThemeMode.dark
+              brightness == Brightness.dark
                   ? Icons.light_mode
                   : Icons.dark_mode,
             ),
-            onPressed: () => appState.toggleTheme(),
+            onPressed: () => appState.toggleTheme(brightness),
           ),
         ],
       ),
@@ -110,9 +113,18 @@ class _DepthEstimationHomePageState extends State<DepthEstimationHomePage> {
                 ),
               _buildSectionTitle(context, 'Original Image'),
               const SizedBox(height: 16),
-              ImagePickerButton(enabled: !_isModelLoading),
+              ActionButton(
+                label: 'Select Image',
+                icon: Icons.photo_library,
+                backgroundColor: Theme.of(context).primaryColor,
+                onPressed: _isModelLoading ? null : () => _showImageSourceDialog(context),
+              ),
               const SizedBox(height: 16),
-              const OriginalImageView(),
+              DisplayCard(
+                imageData: appState.selectedImageBytes,
+                isLoading: appState.isImageLoading,
+                emptyMessage: 'No image selected',
+              ),
               const SizedBox(height: 32),
               _buildSectionTitle(context, 'Depth Map'),
               const SizedBox(height: 16),
@@ -125,14 +137,38 @@ class _DepthEstimationHomePageState extends State<DepthEstimationHomePage> {
                 },
               ),
               const SizedBox(height: 16),
-              const DepthMapView(),
+              DisplayCard(
+                imageData: appState.depthMapImageBytes,
+                isLoading: appState.isProcessing,
+                emptyMessage: appState.selectedImageBytes == null
+                    ? 'Select an image to see depth map'
+                    : 'No depth map generated yet',
+                overlayChild: appState.inferenceTime.isNotEmpty
+                    ? Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: Text(
+                          appState.inferenceTime,
+                          style: Theme.of(context).textTheme.bodyMedium,
+                        ),
+                      )
+                    : null,
+              ),
               const SizedBox(height: 32),
-              EstimationButton(
-                onPressed:
-                    isReadyForEstimation ? () => _runDepthEstimation(context) : null,
+              ActionButton(
+                label: 'Run Depth Estimation',
+                loadingLabel: 'Processing...',
+                icon: Icons.auto_awesome,
+                backgroundColor: Colors.teal,
+                isLoading: appState.isProcessing,
+                onPressed: isReadyForEstimation ? () => _runDepthEstimation(context) : null,
               ),
               const SizedBox(height: 16),
-              SaveButton(onPressed: _saveDepthMap)
+              ActionButton(
+                label: 'Save Depth Map',
+                icon: Icons.save_alt,
+                backgroundColor: Colors.indigo,
+                onPressed: appState.depthMapImageBytes == null ? null : _saveDepthMap,
+              ),
             ],
           ),
         ),
@@ -174,7 +210,7 @@ class _DepthEstimationHomePageState extends State<DepthEstimationHomePage> {
 
     final appState = Provider.of<AppState>(context, listen: false);
 
-    if (appState.selectedImage == null) {
+    if (appState.selectedImageBytes == null) {
       _showSnackbar('Please select an image first.');
       return;
     }
@@ -183,7 +219,7 @@ class _DepthEstimationHomePageState extends State<DepthEstimationHomePage> {
 
     try {
       final result = await _depthEstimator.runDepthEstimation(
-        appState.selectedImage!,
+        appState.selectedImageBytes!,
       );
       appState.setOriginalDimensions(
           result['originalWidth'], result['originalHeight']);
@@ -260,7 +296,75 @@ class _DepthEstimationHomePageState extends State<DepthEstimationHomePage> {
       }
     }
   }
+   Future<void> _showImageSourceDialog(BuildContext context) async {
+    showModalBottomSheet(
+      context: context,
+      builder: (BuildContext context) {
+        return SafeArea(
+          child: Wrap(
+            children: <Widget>[
+              ListTile(
+                leading: const Icon(Icons.photo_library),
+                title: const Text('Photo Library'),
+                onTap: () {
+                  _pickImage(context, ImageSource.gallery);
+                  Navigator.of(context).pop();
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.photo_camera),
+                title: const Text('Camera'),
+                onTap: () {
+                  _pickImage(context, ImageSource.camera);
+                  Navigator.of(context).pop();
+                },
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
 
+  /// Opens the image picker, crops the image in memory, and updates the app state.
+  Future<void> _pickImage(BuildContext context, ImageSource source) async {
+    final appState = Provider.of<AppState>(context, listen: false);
+
+    try {
+      appState.setImageLoading(true);
+      final ImagePicker picker = ImagePicker();
+      final XFile? image = await picker.pickImage(source: source);
+
+      if (image != null) {
+        final imageBytes = await image.readAsBytes();
+        final img_lib.Image? originalImage = img_lib.decodeImage(imageBytes);
+
+        if (originalImage != null) {
+          final int cropSize = min(originalImage.width, originalImage.height);
+          final int cropX = (originalImage.width - cropSize) ~/ 2;
+          final int cropY = (originalImage.height - cropSize) ~/ 2;
+
+          final img_lib.Image croppedImage = img_lib.copyCrop(
+            originalImage,
+            x: cropX,
+            y: cropY,
+            width: cropSize,
+            height: cropSize,
+          );
+
+          final Uint8List croppedBytes =
+              Uint8List.fromList(img_lib.encodeJpg(croppedImage));
+          appState.setSelectedImageBytes(croppedBytes);
+        } else {
+          appState.setSelectedImageBytes(imageBytes);
+        }
+      }
+    } finally {
+      if (mounted) {
+        appState.setImageLoading(false);
+      }
+    }
+  }
   /// Shows a snackbar with a message.
   void _showSnackbar(String message) {
     ScaffoldMessenger.of(context).showSnackBar(

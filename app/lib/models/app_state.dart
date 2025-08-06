@@ -1,15 +1,16 @@
-import 'dart:io';
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
 
+import '../config/app_config.dart'; 
+
 /// Manages the application's state using the ChangeNotifier pattern.
 class AppState extends ChangeNotifier {
-  File? _selectedImage;
+  Uint8List? _selectedImageBytes;
   Uint8List? _depthMapImageBytes;
   bool _isProcessing = false;
   bool _isImageLoading = false;
   String _inferenceTime = '';
-  String _selectedColorMap = 'Viridis';
+  String _selectedColorMap = AppConfig.defaultColorMap;
   ThemeMode _themeMode = ThemeMode.system;
   dynamic _rawDepthMap;
   Uint8List? _liveDepthMapBytes;
@@ -17,7 +18,7 @@ class AppState extends ChangeNotifier {
   int? _originalHeight;
 
   // Getters for the private state variables.
-  File? get selectedImage => _selectedImage;
+  Uint8List? get selectedImageBytes => _selectedImageBytes;
   Uint8List? get depthMapImageBytes => _depthMapImageBytes;
   bool get isProcessing => _isProcessing;
   bool get isImageLoading => _isImageLoading;
@@ -30,8 +31,8 @@ class AppState extends ChangeNotifier {
   int? get originalHeight => _originalHeight;
 
   /// Sets the selected image and resets related states.
-  void setSelectedImage(File? image) {
-    _selectedImage = image;
+  void setSelectedImageBytes(Uint8List? imageBytes) {
+    _selectedImageBytes = imageBytes;
     _depthMapImageBytes = null;
     _liveDepthMapBytes = null; 
     _rawDepthMap = null;
@@ -87,8 +88,8 @@ class AppState extends ChangeNotifier {
   }
 
   /// Toggles the theme between light and dark mode.
-  void toggleTheme() {
-    _themeMode = _themeMode == ThemeMode.dark
+  void toggleTheme(Brightness currentBrightness) {
+    _themeMode = currentBrightness == Brightness.dark
         ? ThemeMode.light
         : ThemeMode.dark;
     notifyListeners();

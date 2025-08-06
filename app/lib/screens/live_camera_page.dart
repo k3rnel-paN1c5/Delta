@@ -28,7 +28,7 @@ class _LiveCameraPageState extends State<LiveCameraPage> {
       return;
     }
 
-    _controller = CameraController(widget.cameras[0], ResolutionPreset.high,
+    _controller = CameraController(widget.cameras[0], ResolutionPreset.medium,
         enableAudio: false);
     _controller.initialize().then((_) {
       if (!mounted) {

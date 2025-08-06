@@ -4,29 +4,15 @@ import 'package:provider/provider.dart';
 
 import 'models/app_state.dart';
 import 'screens/home_page.dart';
-import 'services/depth_estimator.dart';
-import 'services/model_loader.dart';
 
 /// The main entry point of the application.
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   final cameras = await availableCameras();
-  final modelLoader = ModelLoader();
-  final session = await modelLoader.loadModel();
 
   runApp(
-    // Using MultiProvider to make the AppState and DepthEstimator
-    // available to the entire widget tree.
-    MultiProvider(
-      providers: [
-        ChangeNotifierProvider(create: (context) => AppState()),
-        // Provide the DepthEstimator instance to the widget tree.
-        Provider<DepthEstimator>(
-          create: (_) => DepthEstimator(session!),
-          // Ensure the model resources are released when the provider is disposed.
-          dispose: (_, estimator) => modelLoader.close(),
-        ),
-      ],
+    ChangeNotifierProvider(
+      create: (context) => AppState(),
       child: DepthEstimationApp(cameras: cameras),
     ),
   );
