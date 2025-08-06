@@ -1,3 +1,13 @@
+"""
+This script performs dynamic quantization on a trained ONNX model.
+
+Quantization is a process that reduces the precision of the model's weights
+(e.g., from 32-bit floating point to 8-bit integer), which can significantly
+decrease the model's size and speed up inference time with minimal impact on
+accuracy. This script uses the ONNX Runtime quantization tools to apply dynamic
+quantization, where the scaling factors for activations are calculated on-the-fly.
+"""
+
 import os
 import sys
 import argparse

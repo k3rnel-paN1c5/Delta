@@ -1,3 +1,13 @@
+"""
+This module provides a utility function for cropping images to a specific aspect
+ratio.
+
+The `crop_to_aspect_ratio` function is a helper that takes a PIL image and a
+target aspect ratio, and performs a center crop to match that ratio. This is
+useful for preprocessing images to a consistent shape before feeding them into a
+model.
+"""
+
 from PIL import Image
 def crop_to_aspect_ratio(image, aspect_ratio):
     """

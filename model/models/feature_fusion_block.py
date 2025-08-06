@@ -1,3 +1,15 @@
+"""
+This module defines the FeatureFusionBlock for the decoder architecture.
+
+The `FeatureFusionBlock` is a key component of the decoder, responsible for
+combining feature maps from different levels of the model. It takes features from
+a higher (more abstract) decoder layer and fuses them with features from a lower
+(more detailed) encoder layer via a skip connection. This process allows the
+model to integrate both high-level semantic context and low-level spatial details,
+leading to more accurate and refined predictions. The fusion is achieved by
+concatenating the feature maps and processing them through a series of
+convolutional layers.
+"""
 import torch
 import torch.nn as nn
 

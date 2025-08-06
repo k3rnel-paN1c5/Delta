@@ -1,4 +1,5 @@
 from torchvision import transforms
+from .crop_aspect_ratio import crop_to_aspect_ratio
 from config import config
 
 def get_train_transforms(input_size=(config.IMG_HEIGHT, config.IMG_WIDTH)):
@@ -13,12 +14,23 @@ def get_train_transforms(input_size=(config.IMG_HEIGHT, config.IMG_WIDTH)):
         transforms.ToTensor(),
         transforms.Normalize(mean=config.IMGNET_NORMALIZE_MEAN, std=config.IMGNET_NORMALIZE_STD)
     ])
+class AspectRatioCrop:
+    """
+    A transform to crop a PIL image to a target aspect ratio.
+    """
+    def __init__(self, aspect_ratio):
+        self.aspect_ratio = aspect_ratio
 
-def get_eval_transforms(input_size=(config.IMG_HEIGHT, config.IMG_WIDTH)):
+    def __call__(self, img):
+        return crop_to_aspect_ratio(img, self.aspect_ratio)
+
+def get_eval_transforms(target_aspect_ratio, input_size=(config.IMG_HEIGHT, config.IMG_WIDTH)):
     """Returns a composition of transforms for evaluation."""
     return transforms.Compose([
+        AspectRatioCrop(target_aspect_ratio),
         transforms.Resize(input_size[0]),
         transforms.CenterCrop(input_size),
         transforms.ToTensor(),
         transforms.Normalize(mean=config.IMGNET_NORMALIZE_MEAN, std=config.IMGNET_NORMALIZE_STD)
     ])
+    

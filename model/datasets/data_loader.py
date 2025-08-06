@@ -1,3 +1,11 @@
+"""
+This module provides a custom dataset for handling unlabeled images.
+
+The `UnlabeledImageDataset` class is a PyTorch `Dataset` designed to load images
+from a directory without corresponding labels. It supports various image formats
+and allows for optional resizing and data transformations, making it flexible for
+use in unsupervised or self-supervised learning tasks like knowledge distillation.
+"""
 import os
 from torch.utils.data import Dataset
 from PIL import Image

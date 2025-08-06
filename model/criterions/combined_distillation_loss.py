@@ -1,3 +1,18 @@
+"""
+This module defines a combined distillation loss strategy.
+
+The `CombinedDistillationLoss` class implements a combined loss calculation that
+combines four loss components:
+    1.  Scale-Invariant Log (SILog) Loss: Measures the overall accuracy of the
+        predicted depth map.
+    2.  Gradient Matching Loss (L1): Enforces that the student's depth map
+        has similar edges and fine details as the teacher's.
+    3.  Feature Matching Loss (L1): Encourages the student's intermediate
+        feature representations to be similar to the teacher's.
+    4.  Attention Matching Loss (L2): Encourages the student to focus on the
+        same spatial regions of the image as the teacher.
+"""
+
 import torch
 from torch import nn
 import torch.nn.functional as F

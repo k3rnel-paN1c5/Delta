@@ -31,6 +31,7 @@ from config import config
 from utils.transforms import get_eval_transforms
 
 
+
 def evaluate(args):
     """
     Evaluates the student model against the teacher model on a given dataset.
@@ -52,7 +53,11 @@ def evaluate(args):
 
     # --- 2. Set up the dataset and dataloader ---
     input_size = (config.IMG_HEIGHT, config.IMG_WIDTH)
-    eval_transform = get_eval_transforms(input_size)
+    target_aspect_ratio = config.IMG_WIDTH / config.IMG_HEIGHT
+
+    eval_transform = get_eval_transforms(target_aspect_ratio, input_size)
+
+    
     eval_dataset = UnlabeledImageDataset(
         root_dir=args.dataset_path, transform=eval_transform, resize_size=input_size
     )

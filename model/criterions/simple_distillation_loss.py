@@ -1,3 +1,11 @@
+"""
+This module defines a simple distillation loss strategy.
+
+The `SimpleDistillationLoss` class implements a basic loss calculation that
+focuses solely on minimizing the Mean Squared Error (MSE) between the pixel-wise
+depth predictions of the student and teacher models.
+"""
+
 import torch.nn.functional as F
 
 from .criterion import LossStrategy

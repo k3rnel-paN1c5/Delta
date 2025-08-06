@@ -1,3 +1,13 @@
+"""
+This module defines the UpsampleBlock for the decoder architecture.
+
+The `UpsampleBlock` is a fundamental component of the decoder, designed to
+increase the spatial resolution of feature maps. It uses bilinear interpolation
+to scale up the features, followed by a series of depthwise separable
+convolutions to refine the upsampled representation. This block is applied
+iteratively within the decoder to progressively reconstruct a high-resolution
+output from low-resolution feature maps.
+"""
 import torch
 import torch.nn as nn
 

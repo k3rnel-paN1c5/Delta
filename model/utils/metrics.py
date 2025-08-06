@@ -1,3 +1,11 @@
+"""
+This module provides functions for computing standard depth estimation metrics.
+
+The `compute_depth_metrics` function calculates a set of common metrics used to
+evaluate the performance of depth estimation models, including Absolute Relative
+Difference (AbsRel), Squared Relative Difference (SqRel), Root Mean Squared Error
+(RMSE), and threshold-based accuracy metrics (a1, a2, a3).
+"""
 import torch
 
 def compute_depth_metrics(pred, target):
