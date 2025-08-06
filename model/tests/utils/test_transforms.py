@@ -76,14 +76,14 @@ class TestTransforms(unittest.TestCase):
         """
         Test if get_eval_transforms returns a Compose object with the correct transforms and parameters.
         """
-        eval_transforms = get_eval_transforms()
+        eval_transforms = get_eval_transforms(1)
         self.assertIsInstance(eval_transforms, transforms.Compose)
 
         # Check for the correct number of transforms
-        self.assertEqual(len(eval_transforms.transforms), 3)
+        self.assertEqual(len(eval_transforms.transforms), 5)
 
         # Unpack transforms
-        resize, to_tensor, normalize = eval_transforms.transforms
+        asp, resize, crop, to_tensor, normalize = eval_transforms.transforms
 
         # Validate types
         self.assertIsInstance(resize, transforms.Resize)
@@ -91,7 +91,7 @@ class TestTransforms(unittest.TestCase):
         self.assertIsInstance(normalize, transforms.Normalize)
 
         # Validate parameters
-        self.assertEqual(resize.size, (mock_config.IMG_HEIGHT, mock_config.IMG_WIDTH))
+        self.assertEqual(resize.size, mock_config.IMG_HEIGHT)
         self.assertEqual(normalize.mean, mock_config.IMGNET_NORMALIZE_MEAN)
         self.assertEqual(normalize.std, mock_config.IMGNET_NORMALIZE_STD)
 
@@ -99,7 +99,7 @@ class TestTransforms(unittest.TestCase):
         """
         Test the output of the evaluation transformation pipeline.
         """
-        eval_transforms = get_eval_transforms()
+        eval_transforms = get_eval_transforms(1)
         transformed_image = eval_transforms(self.dummy_image)
 
         # Check output type and shape
@@ -112,7 +112,7 @@ class TestTransforms(unittest.TestCase):
         """
         custom_size = (128, 128)
         train_transforms = get_train_transforms(input_size=custom_size)
-        eval_transforms = get_eval_transforms(input_size=custom_size)
+        eval_transforms = get_eval_transforms(1, input_size=custom_size)
 
         # Check training transforms with custom size
         self.assertEqual(train_transforms.transforms[2].size, custom_size) # RandomResizedCrop
@@ -120,7 +120,7 @@ class TestTransforms(unittest.TestCase):
         self.assertEqual(train_output.shape, (3, custom_size[0], custom_size[1]))
 
         # Check evaluation transforms with custom size
-        self.assertEqual(eval_transforms.transforms[0].size, custom_size) # Resize
+        self.assertEqual(eval_transforms.transforms[1].size, custom_size[0]) # Resize
         eval_output = eval_transforms(self.dummy_image)
         self.assertEqual(eval_output.shape, (3, custom_size[0], custom_size[1]))
 

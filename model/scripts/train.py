@@ -1,15 +1,29 @@
-"""
-This script trains a student depth estimation model using response-based knowledge distillation from a pre-trained teacher model.
+"""Main training script for the knowledge distillation framework.
 
-The main components of the training process are:
-1.  Model Initialization: Loads a pre-trained teacher model (Depth-Anything-V2) and initializes a student model with a lightweight backbone (MobileViT).
-2.  Data Loading: Sets up training and validation datasets from a directory of unlabeled images, applying data augmentation for the training set and simple resizing/normalization for the validation set.
-3.  Optimization: Configures an AdamW optimizer with different learning rates for the student's encoder and decoder, along with a cosine annealing learning rate scheduler.
-4.  Loss Calculation: Utilizes a composite `CombinedDistillationLoss` function that combines SILog, gradient matching, feature matching, and attention matching losses to effectively transfer knowledge from the teacher to the student.
-5.  Training Loop: Iterates through the specified number of epochs, running a full training step on each batch (forward passes, loss calculation, backpropagation) and a full validation loop at the end of each epoch.
-6.  Checkpointing: Saves the student model's state dictionary to a checkpoint file whenever the validation loss improves.
+This script orchestrates the entire training process for the student depth estimation
+model. It is the primary entry point for launching a training run.
 
-The script is designed to be run from the project's root directory and uses configuration parameters defined in the `config.py` file.
+The main function handles the following key responsibilities:
+    1.  **Configuration Loading**: It loads all hyperparameters and settings from the
+        centralized `config.py` file.
+    2.  **Component Instantiation**: It leverages the project's factories to
+        dynamically create all the necessary components for training, including:
+        - The teacher and student models (`models.factory`).
+        - The training and validation data loaders (`datasets.factory`).
+        - The distillation loss function, based on the chosen strategy
+          (`criterions.factory`).
+        - The optimizer (e.g., AdamW) and a learning rate scheduler
+          (`utils.factory`).
+    3.  **Training Loop**: It executes the main training loop for the specified
+        number of epochs. In each iteration, it performs:
+        - A forward pass through both the teacher and student models.
+        - Calculation of the combined distillation loss.
+        - Backpropagation to compute gradients for the student model.
+        - An optimizer step to update the student's weights.
+    4.  **Evaluation**: After each training epoch, it calls the evaluation
+        pipeline to measure the student model's performance on the validation set.
+    5.  **Checkpointing**: It saves the best-performing student model checkpoint
+        based on the validation metrics, ensuring that the best model is preserved.
 """
 
 import torch

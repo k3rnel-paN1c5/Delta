@@ -1,5 +1,4 @@
-"""
-This module defines the FeatureFusionBlock for the decoder architecture.
+"""Feature Fusion Block for the decoder architecture.
 
 The `FeatureFusionBlock` is a key component of the decoder, responsible for
 combining feature maps from different levels of the model. It takes features from
@@ -10,13 +9,13 @@ leading to more accurate and refined predictions. The fusion is achieved by
 concatenating the feature maps and processing them through a series of
 convolutional layers.
 """
+
 import torch
 import torch.nn as nn
 
 
 class FeatureFusionBlock(nn.Module):
-    """
-    A block that fuses features from two different sources.
+    """A block that fuses features from two different sources.
 
     This block is used to combine features from a higher-level (more abstract)
     decoder stage with features from a lower-level (more detailed) encoder stage
@@ -24,9 +23,8 @@ class FeatureFusionBlock(nn.Module):
     dimension and then refined using a series of convolutional layers.
     """
 
-    def __init__(self, channels: int):
-        """
-        Initializes the FeatureFusionBlock.
+    def __init__(self, channels: int) -> None:
+        """Initializes the FeatureFusionBlock.
 
         Args:
             channels (int): The number of channels in each of the input feature maps.
@@ -49,8 +47,7 @@ class FeatureFusionBlock(nn.Module):
     def forward(
         self, higher_level_features: torch.Tensor, skip_features: torch.Tensor
     ) -> torch.Tensor:
-        """
-        Forward pass of the FeatureFusionBlock.
+        """Forward pass of the FeatureFusionBlock.
 
         Args:
             higher_level_features (torch.Tensor): The feature map from the previous,
@@ -64,6 +61,6 @@ class FeatureFusionBlock(nn.Module):
             torch.Tensor: The fused and refined feature map.
         """
         # Concatenate the two feature maps along the channel dimension
-        fused_features = torch.cat([higher_level_features, skip_features], dim=1)
+        fused_features: torch.Tensor = torch.cat([higher_level_features, skip_features], dim=1)
         # Process the fused features with the convolutional layers
         return self.conv(fused_features)

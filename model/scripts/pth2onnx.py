@@ -1,3 +1,21 @@
+"""ONNX Conversion Utility for the Student Depth Model.
+
+This script provides a command-line utility to convert a trained student model,
+saved as a PyTorch `.pth` checkpoint file, into the ONNX (Open Neural Network
+Exchange) format.
+
+Converting the model to ONNX is a critical step for deployment, as it creates a
+standardized, portable, and high-performance representation of the model that can
+be run on a wide variety of platforms and devices, including:
+    - Mobile devices (iOS and Android) using frameworks like Core ML or TensorFlow Lite.
+    - Web browsers using ONNX.js or WebNN.
+    - Cloud services and edge devices that support the ONNX Runtime.
+
+The script handles loading the model architecture, loading the trained weights
+from the checkpoint, and then exporting it to a `.onnx` file with a dynamic
+input shape to accommodate various image sizes.
+"""
+
 import torch
 import os
 import sys

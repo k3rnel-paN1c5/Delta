@@ -1,22 +1,36 @@
-"""
-This script evaluates a trained student depth estimation model against a teacher model.
+"""Evaluation script for the depth estimation model.
 
-It performs the following steps:
-1.  Loads a pre-trained student model from a checkpoint file and a teacher model from the Hugging Face Hub.
-2.  Sets up an evaluation dataset from a specified directory of images, applying the necessary transformations.
-3.  Initializes a suite of standard depth estimation metrics.
-4.  Iterates through the dataset in batches, generating depth predictions from both the student and teacher models.
-5.  Measures and records the inference time for both models.
-7.  Computes and accumulates the depth metrics for each batch.
-8.  Calculates the average of all metrics over the entire dataset and prints the final results to the console.
+This script is responsible for evaluating the performance of a trained student
+model on a validation or test dataset. It provides quantitative metrics to
+assess the model's accuracy and is used during the training process to track
+progress and identify the best-performing model checkpoint.
 
-This script is intended to be run from the command line, with arguments specifying the path to the trained model, the evaluation dataset, and the batch size.
+The main `evaluate` function performs the following steps:
+    1.  **Sets Model to Evaluation Mode**: It ensures the model is in `eval()`
+        mode, which disables layers like dropout and batch normalization that
+        behave differently during training and inference.
+    2.  **Disables Gradient Computation**: It uses the `torch.no_grad()` context
+        manager to prevent the computation of gradients, which saves memory and
+        computation time during inference.
+    3.  **Iterates Through Data**: It loops through the specified dataset
+        (e.g., validation set).
+    4.  **Inference**: For each batch of images, it performs a forward pass through
+        the student model to obtain a depth prediction.
+    5.  **Metrics Calculation**: It computes a standard set of depth estimation
+        metrics by comparing the student's prediction to the teacher's prediction
+        (or ground truth if available). These metrics are calculated using the
+        utility functions in `utils/metrics.py`.
+    6.  **Aggregates and Returns Metrics**: It aggregates the metrics over all
+        batches and returns a dictionary containing the final, averaged scores
+        (e.g., RMSE, AbsRel, a1-a3).
 """
 
 import torch
 import argparse
 from torch.utils.data import DataLoader
 from tqdm import tqdm
+from typing import Dict, Union
+
 import time
 import os
 
@@ -32,9 +46,26 @@ from utils.transforms import get_eval_transforms
 
 
 
-def evaluate(args):
+def evaluate(
+    student_path: torch.nn.Module,
+    dataset_path: str,
+    batch_size: int
+    ) -> Dict[str, float]:
     """
-    Evaluates the student model against the teacher model on a given dataset.
+    Evaluates the student model's performance on the validation set.
+
+    This function iterates through the validation dataset, computes depth
+    predictions from both the student and teacher models, and calculates
+    a set of standard depth estimation metrics.
+
+    Args:
+        student_path (str): The path to the student model (pth) to be evaluated.
+        dataset_path (str): The path to the data for the validation set.
+        batch_size (int): the size of the batch.
+
+    Returns:
+        Dict[str, float]: A dictionary containing the aggregated evaluation
+                          metrics over the entire validation dataset.
     """
     device = config.DEVICE
     print(f"Using device: {device}")
@@ -42,7 +73,7 @@ def evaluate(args):
     # --- 1. Load the models ---
     print("Loading models...")
     student_model = StudentDepthModel(pretrained=False).to(device)
-    student_model.load_state_dict(torch.load(args.model_path, map_location=device))
+    student_model.load_state_dict(torch.load(student_path, map_location=device))
     student_model.eval()
 
     teacher_model = TeacherWrapper(
@@ -59,15 +90,15 @@ def evaluate(args):
 
     
     eval_dataset = UnlabeledImageDataset(
-        root_dir=args.dataset_path, transform=eval_transform, resize_size=input_size
+        root_dir=dataset_path, transform=eval_transform, resize_size=input_size
     )
     eval_dataloader = DataLoader(
-        eval_dataset, batch_size=args.batch_size, shuffle=False, num_workers=2
+        eval_dataset, batch_size=batch_size, shuffle=False, num_workers=2
     )
     print(f"Evaluating on {len(eval_dataset)} images.")
 
     # --- 3. Initialize metrics ---
-    total_metrics = {
+    total_metrics: Dict[str, float] = {
         "abs_rel": 0.0,
         "sq_rel": 0.0,
         "rmse": 0.0,
@@ -103,16 +134,16 @@ def evaluate(args):
             total_student_time += (end_time - start_time)
 
             # Compute metrics for the batch
-            metrics = compute_depth_metrics(student_depth, teacher_depth)
+            metrics: Dict[str, float] = compute_depth_metrics(student_depth, teacher_depth)
 
             # Accumulate metrics
-            batch_size = images.size(0)
+            batch_size: int = images.size(0)
             for key in total_metrics:
                 total_metrics[key] += metrics[key] * batch_size
             num_samples += batch_size
 
     # --- 5. Calculate and print average metrics ---
-    avg_metrics = {key: total / num_samples for key, total in total_metrics.items()} 
+    avg_metrics: Dict[str, float] = {key: total / num_samples for key, total in total_metrics.items()} 
     avg_student_time = total_student_time / num_samples
     avg_teacher_time = total_teacher_time / num_samples
 
@@ -150,6 +181,8 @@ if __name__ == "__main__":
     parser.add_argument(
         "--batch-size", type=int, default=4, help="Batch size for evaluation"
     )
-
     args = parser.parse_args()
-    evaluate(args)
+    student_path: str = args.args.model_path
+    dataset: str = args.dataset_path
+    batch: int = args.batch_size
+    evaluate(student_path, dataset, batch)

@@ -1,3 +1,11 @@
+"""Student Model Class
+
+The `StudentDepthModel` orchestrate the work of the encoder and decoder.
+Incorporates skip connections.
+Encoder: MobileViT-XS features layer
+Decoder: `MiniDPT` Decoder, defined in the same directory of this class
+"""
+
 import timm
 import torch
 import torch.nn as nn
@@ -8,8 +16,7 @@ from .mini_dpt import MiniDPT
 
 
 class StudentDepthModel(nn.Module):
-    """
-    The student model for monocular depth estimation.
+    """The student model for monocular depth estimation.
 
     This model consists of a lightweight, pre-trained encoder (e.g., MobileViT)
     and a custom lightweight decoder (MiniDPT). It is designed to be trained
@@ -23,18 +30,15 @@ class StudentDepthModel(nn.Module):
         feature_indices: Tuple[int, ...] = (0, 1, 2, 3),
         decoder_channels: Tuple[int, ...] = (64, 128, 160, 256),
         pretrained: bool = True,
-    ):
-        """
-        Initializes the StudentDepthModel.
+    ) -> None:
+        """Initializes the StudentDepthModel.
 
         Args:
-            encoder_name (str): The name of the encoder model to use from the `timm`
-                                library.
-            feature_indices (Tuple[int, ...]): A tuple of indices specifying which
-                                               feature maps to extract from the encoder.
-            decoder_channels (Tuple[int, ...]): A tuple of channel counts for the
-                                                decoder stages.
-            pretrained (bool): Whether to load pre-trained weights for the encoder.
+            feature_indices: A tuple of indices specifying which
+                feature maps to extract from the encoder.
+            decoder_channels: A tuple of channel counts for the
+                decoder stages.
+            pretrained: Whether to load pre-trained weights for the encoder.
         """
         super().__init__()
         if len(feature_indices) != len(decoder_channels):
@@ -43,13 +47,12 @@ class StudentDepthModel(nn.Module):
             )
 
         # 1. Instantiate the Encoder
-        # We use the `timm` library to create a pre-trained encoder.
         # `features_only=True` makes the model return a List of feature maps
         # at different stages, instead of a final classification output.
-        self.encoder = timm.create_model(
+        self.encoder: nn.Module = timm.create_model(
             "mobilevit_xs",
             pretrained=pretrained,
-            features_only=True,  # This returns a List of feature maps
+            features_only=True,
         )
         self.feature_indices = feature_indices
 
@@ -58,18 +61,19 @@ class StudentDepthModel(nn.Module):
         # channels in the feature maps that the encoder produces. We can find
         # this by doing a dummy forward pass.
         with torch.no_grad():
-            dummy_input = torch.randn(1, 3, 224, 224)
-            features = self.encoder(dummy_input)
-            encoder_channels = [features[i].shape[1] for i in self.feature_indices]
+            dummy_input: torch.Tensor = torch.randn(1, 3, 384, 384)
+            features: List[torch.Tensor] = self.encoder(dummy_input)
+            encoder_channels: List[int] = [
+                features[i].shape[1] for i in self.feature_indices
+            ]
 
         # 3. Instantiate the Decoder
         # The decoder takes the feature maps from the encoder and upsamples them
         # to produce the final depth map.
-        self.decoder = MiniDPT(encoder_channels, list(decoder_channels))
+        self.decoder: MiniDPT = MiniDPT(encoder_channels, list(decoder_channels))
 
     def forward(self, x: torch.Tensor) -> Tuple[torch.Tensor, List[torch.Tensor]]:
-        """
-        Forward pass of the StudentDepthModel.
+        """Forward pass of the StudentDepthModel.
 
         Args:
             x (torch.Tensor): The input image tensor.
@@ -81,24 +85,32 @@ class StudentDepthModel(nn.Module):
               used for feature-based distillation (List[torch.Tensor]).
         """
         # Get the feature maps from the encoder
-        features = self.encoder(x)
+        features: List[torch.Tensor] = self.encoder(x)
         # Select the feature maps at the specified indices
-        selected_features = [features[i] for i in self.feature_indices]
+        selected_features: List[torch.Tensor] = [
+            features[i] for i in self.feature_indices
+        ]
         # Pass the selected features to the decoder to get the depth map
-        depth_map = self.decoder(selected_features)
+        depth_map: torch.Tensor = self.decoder(selected_features)
         return depth_map, selected_features
-    
+
     def forward_inference(self, x: torch.Tensor) -> torch.Tensor:
+        """Forward pass for inference. Returns only the final depth map.
+
+        Args:
+            x: The input image tensor.
+
+        Returns:
+            The final predicted depth map.
         """
-        Forward pass for inference. Returns only the final depth map.
-        """
-        features = self.encoder(x)
-        selected_features = [features[i] for i in self.feature_indices]
+        features: List[torch.Tensor] = self.encoder(x)
+        selected_features: List[torch.Tensor] = [
+            features[i] for i in self.feature_indices
+        ]
         return self.decoder(selected_features)
 
-    def fuse_model(self):
-        """
-        Fuses 'Conv-BN-ReLU' or 'Conv-BN' modules in the model for faster inference.
+    def fuse_model(self) -> None:
+        """Fuses 'Conv-BN-ReLU' or 'Conv-BN' modules in the model for faster inference.
         This should be called after loading weights and before exporting to ONNX.
         """
         print("Fusing modules for optimized inference...")
@@ -109,11 +121,13 @@ class StudentDepthModel(nn.Module):
                 # We need to find these patterns in all our sequential blocks
                 # Note: This requires the layers in nn.Sequential to have names,
                 # which they do by default (0, 1, 2, ...).
-                
+
                 # Fusion for UpsampleBlock and FeatureFusionBlock
-                if len(module) == 6: # Pattern: Conv-BN-ReLU-Conv-BN-ReLU
-                    fuse_modules(module, [['0', '1', '2'], ['3', '4', '5']], inplace=True)
-                
+                if len(module) == 6:  # Pattern: Conv-BN-ReLU-Conv-BN-ReLU
+                    fuse_modules(
+                        module, [["0", "1", "2"], ["3", "4", "5"]], inplace=True
+                    )
+
                 # Fusion for MiniDPT projection layers
-                if len(module) == 3: # Pattern: Conv-BN-ReLU
-                    fuse_modules(module, ['0', '1', '2'], inplace=True)
+                if len(module) == 3:  # Pattern: Conv-BN-ReLU
+                    fuse_modules(module, ["0", "1", "2"], inplace=True)

@@ -1,14 +1,19 @@
+"""MiniDpt Decoder Architecture.
+
+Uses `FeatureFusionBlock` and `UpsampleBlock` to define the architecture of the decoder.
+Applies Projections to the features extracted before fusing them.
+"""
+
 import torch
 import torch.nn as nn
-from typing import Tuple, List
+from typing import List
 
 from .upsample_block import UpsampleBlock
 from .feature_fusion_block import FeatureFusionBlock
 
 
 class MiniDPT(nn.Module):
-    """
-    A lightweight, DPT-inspired decoder for monocular depth estimation.
+    """A lightweight, DPT-inspired decoder for monocular depth estimation.
 
     This decoder takes a list of feature maps from an encoder at different
     spatial resolutions and progressively fuses them to generate a high-resolution
@@ -16,9 +21,10 @@ class MiniDPT(nn.Module):
     but is simplified for use with a lightweight backbone like MobileViT.
     """
 
-    def __init__(self, encoder_channels: List[int], decoder_channels: List[int]):
-        """
-        Initializes the MiniDPT decoder.
+    def __init__(
+        self, encoder_channels: List[int], decoder_channels: List[int]
+    ) -> None:
+        """Initializes the MiniDPT decoder.
 
         Args:
             encoder_channels (List[int]): A list of the number of channels for each
@@ -46,7 +52,7 @@ class MiniDPT(nn.Module):
         # 1. Projection Convolutions
         # These 1x1 convolutions project the encoder features to the number of
         # channels specified for the decoder.
-        self.projection_convs = nn.ModuleList()
+        self.projection_convs: nn.ModuleList = nn.ModuleList()
         for i in range(len(encoder_channels)):
             self.projection_convs.append(
                 nn.Sequential(
@@ -65,8 +71,8 @@ class MiniDPT(nn.Module):
         # These blocks are used to upsample the features from a higher decoder
         # level and fuse them with the projected features from the corresponding
         # encoder level (skip connection).
-        self.upsample_blocks = nn.ModuleList()
-        self.fusion_blocks = nn.ModuleList()
+        self.upsample_blocks: nn.ModuleList = nn.ModuleList()
+        self.fusion_blocks: nn.ModuleList = nn.ModuleList()
 
         for i in range(len(decoder_channels) - 1):
             # Upsample from the current decoder channel count to the next (lower) one
@@ -79,7 +85,7 @@ class MiniDPT(nn.Module):
         # 3. Prediction Head
         # This final part of the decoder takes the fused features from the last
         # stage and produces the final single-channel depth map.
-        self.prediction_head = nn.Sequential(
+        self.prediction_head: nn.Sequential = nn.Sequential(
             nn.Conv2d(
                 decoder_channels[-1],
                 decoder_channels[-1] // 2,
@@ -95,8 +101,7 @@ class MiniDPT(nn.Module):
         )
 
     def forward(self, encoder_features: List[torch.Tensor]) -> torch.Tensor:
-        """
-        Forward pass of the MiniDPT decoder.
+        """Forward pass of the MiniDPT decoder.
 
         Args:
             encoder_features (List[torch.Tensor]): A list of feature maps from the
@@ -108,20 +113,20 @@ class MiniDPT(nn.Module):
         """
 
         # Reverse the features to process from the highest level to the lowest
-        features = encoder_features[::-1]
+        features: List[torch.Tensor] = encoder_features[::-1]
 
         # Project all encoder features to the decoder's channel dimensions
-        projected_features = [
+        projected_features: List[torch.Tensor] = [
             self.projection_convs[i](features[i]) for i in range(len(features))
         ]
 
         # Start with the highest-level (most abstract) feature map
-        current_features = projected_features[0]
+        current_features: torch.Tensor = projected_features[0]
 
         # Iteratively upsample and fuse with lower-level skip connections
         for i in range(len(self.fusion_blocks)):
-            upsampled = self.upsample_blocks[i](current_features)
-            skip_connection = projected_features[i + 1]
+            upsampled: torch.Tensor = self.upsample_blocks[i](current_features)
+            skip_connection: torch.Tensor = projected_features[i + 1]
             current_features = self.fusion_blocks[i](upsampled, skip_connection)
 
         # Generate final prediction using the prediction head

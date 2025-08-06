@@ -37,7 +37,7 @@ STUDENT_FEATURE_INDICES = [0, 1, 2, 3]
 USE_PRETRAINED = True
 # Channel dimensions for the MiniDPT decoder blocks
 ## [64, 128, 160, 256]
-STUDENT_DECODER_CHANNELS =  [64, 128, 160, 256] # [96, 192, 256, 320]
+STUDENT_DECODER_CHANNELS = [64, 128, 160, 256]  # [96, 192, 256, 320]
 
 
 # -- Training Configuration --

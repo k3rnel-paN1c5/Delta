@@ -1,5 +1,4 @@
-"""
-This module defines the UpsampleBlock for the decoder architecture.
+"""Upsample Block for the decoder architecture.
 
 The `UpsampleBlock` is a fundamental component of the decoder, designed to
 increase the spatial resolution of feature maps. It uses bilinear interpolation
@@ -8,13 +7,13 @@ convolutions to refine the upsampled representation. This block is applied
 iteratively within the decoder to progressively reconstruct a high-resolution
 output from low-resolution feature maps.
 """
+
 import torch
 import torch.nn as nn
 
 
 class UpsampleBlock(nn.Module):
-    """
-    A building block for the decoder that upsamples feature maps and refines them.
+    """A building block for the decoder that upsamples feature maps and refines them.
 
     This block first increases the spatial resolution of the input feature map by a
     factor of 2 using bilinear interpolation. It then applies a series of
@@ -22,24 +21,23 @@ class UpsampleBlock(nn.Module):
     it uses depthwise separable convolutions.
     """
 
-    def __init__(self, in_channels: int, out_channels: int):
-        """
-        Initializes the UpsampleBlock.
+    def __init__(self, in_channels: int, out_channels: int) -> None:
+        """Initializes the UpsampleBlock.
 
         Args:
-            in_channels (int): The number of channels in the input feature map.
-            out_channels (int): The number of channels in the output feature map.
+            in_channels: The number of channels in the input feature map.
+            out_channels: The number of channels in the output feature map.
         """
         super().__init__()
 
         # Upsampling layer to increase spatial resolution
-        self.upsample = nn.Upsample(
+        self.upsample: nn.Upsample = nn.Upsample(
             scale_factor=2, mode="bilinear", align_corners=False
         )
 
-        # Convolutional layers to refine the upsampled features 
-        self.conv = nn.Sequential(
-            # First 3x3 convolution
+        # Convolutional layers to refine the upsampled features
+        self.conv: nn.Sequential = nn.Sequential(
+            # First 3x3 block operates on in_channel
             nn.Conv2d(
                 in_channels,
                 in_channels,
@@ -50,11 +48,11 @@ class UpsampleBlock(nn.Module):
             ),
             nn.BatchNorm2d(in_channels),
             nn.ReLU(),
-            # Second 1x1 convolution
             nn.Conv2d(in_channels, out_channels, kernel_size=1, bias=False),
             nn.BatchNorm2d(out_channels),
             nn.ReLU(),
-            # (This second block operates on out_channels)
+            
+            # Second 3x3 block operates on out_channel
             nn.Conv2d(
                 out_channels,
                 out_channels,
@@ -71,8 +69,7 @@ class UpsampleBlock(nn.Module):
         )
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        """
-        Forward pass of the UpsampleBlock.
+        """Forward pass of the UpsampleBlock.
 
         Args:
             x (torch.Tensor): The input feature map.
@@ -81,5 +78,5 @@ class UpsampleBlock(nn.Module):
             torch.Tensor: The upsampled and refined feature map.
         """
         # Apply upsampling and then the convolutional layers
-        upsampled_features = self.upsample(x)
+        upsampled_features: torch.Tensor = self.upsample(x)
         return self.conv(upsampled_features)
