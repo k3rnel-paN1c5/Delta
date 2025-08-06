@@ -43,8 +43,8 @@ def infer(args):
 
     # --- 2. Define image transformations ---
     input_size = (config.IMG_HEIGHT, config.IMG_WIDTH)
-    transform = get_eval_transforms(input_size)
     target_aspect_ratio = config.IMG_WIDTH / config.IMG_HEIGHT
+    transform = get_eval_transforms(target_aspect_ratio, input_size)
 
     # --- 3. Get list of images to process ---
     if os.path.isdir(args.input_path):
@@ -75,7 +75,7 @@ def infer(args):
                 cropped_size = cropped_image.size # Returns (width, height)
                 
                 # original_size = image.size # Returns (width, height)
-                input_tensor = transform(cropped_image).unsqueeze(0).to(device)
+                input_tensor = transform(image).unsqueeze(0).to(device)
 
                 # --- 6. Run inference ---
                 predicted_depth, _ = model(input_tensor)

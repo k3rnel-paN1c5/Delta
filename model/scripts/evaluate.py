@@ -182,7 +182,7 @@ if __name__ == "__main__":
         "--batch-size", type=int, default=4, help="Batch size for evaluation"
     )
     args = parser.parse_args()
-    student_path: str = args.args.model_path
+    student_path: str = args.model_path
     dataset: str = args.dataset_path
     batch: int = args.batch_size
     evaluate(student_path, dataset, batch)
