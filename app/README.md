@@ -26,22 +26,13 @@ Follow these instructions to get a copy of the project up and running on your lo
 
 1.  **Clone the repository:**
     ```bash
-    git clone [https://github.com/k3rnel-paN1c5/deep-vision.git](https://github.com/k3rnel-paN1c5/deep-vision.git)
+    git clone [https://github.com/k3rnel-paN1c5/Delta.git](https://github.com/k3rnel-paN1c5/Delta.git)
     cd app
     ```
 2.  **Install dependencies:**
     ```bash
     flutter pub get
     ```
-<!-- 3.  **Place the TFLite model:**
-    * Obtain the `depth_model.tflite` file.
-    * Create an `assets` directory in the root of the project.
-    * Place the `depth_model.tflite` file inside the `assets` directory.
-    * Uncomment the assets section in the `pubspec.yaml` file:
-        ```yaml
-        assets:
-          - assets/depth_model.tflite
-        ``` -->
 
 3.  **Run the app:**
     ```bash
@@ -69,7 +60,7 @@ app/
 ├── lib/
 │   └── main.dart     # Main application code
 ├── assets/
-│   └── depth_model.tflite # (To be added) TFLite model file
+│   └── Delta.onnx    # onnx model file
 ├── pubspec.yaml      # Project dependencies and configuration
 └── README.md         # This file
 ```
@@ -80,7 +71,7 @@ app/
 
 * **Flutter**: For building the cross-platform mobile application.
 * **Dart**: The programming language used for Flutter development.
-* **TensorFlow Lite**: The machine learning framework for running the model on-device. The `tflite_flutter` package is used for this.
+* **ONNX Runtime**: The machine learning framework for running the model on-device. The `onnxruntime` package is used for this.
 * **image_picker**: A Flutter plugin for selecting images from the device gallery.
 * **image**: A Dart library for image processing.
 
@@ -88,7 +79,5 @@ app/
 
 ## 🔮 Future Work
 
-* Integrate a pre-trained depth estimation model.
-* Implement a live camera feed for real-time depth estimation.
 * Improve the accuracy and performance of the model.
 * Add more post-processing options for the depth map.
