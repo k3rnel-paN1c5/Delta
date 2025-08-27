@@ -35,29 +35,26 @@ jobs:
         uses: xu-cheng/latex-action@v3
         with:
           # The root LaTeX file to be compiled.
-          root_file: 'docs/Report/Delta.tex'
+          root_file: 'Delta.tex'
           
-          # The working directory for the compilation, if your .tex files are in a subdirectory.
-          # For example, if your files are in a 'source' folder, you would uncomment the next line:
-          # working_directory: 'source/'
+          # The working directory for the compilation.
+          working_directory: 'docs/Report'
 
-          # The compiler to use. Common options are 'pdflatex', 'xelatex', 'lualatex'.
-          # 'pdflatex' is a good default for most projects.
           compiler: 'pdflatex'
 
-          # Arguments to pass to the compiler.
-          # For example, you might need '-shell-escape' if you use packages like 'minted'.
-          # args: '-shell-escape'
+      # Step 3: Move the generated PDF to the 'docs' folder
+      # This step moves the PDF from the compilation directory to the parent 'docs' directory.
+      - name: Move PDF to docs folder
+        run: mv docs/Report/Delta.pdf docs/Delta.pdf
 
-      # Step 3: Upload the generated PDF as an artifact
+      # Step 4: Upload the generated PDF as an artifact
       # This makes the compiled PDF available for download from the workflow's summary page.
       - name: Upload PDF artifact
         uses: actions/upload-artifact@v4
         with:
           # The name of the artifact as it will appear in the GitHub UI.
-          # You can name this whatever you like.
-          name: AI-Project-Report
+          name: Delta-Report
           
           # The path to the file(s) to upload.
-          path: 'docs/DeltaReport.pdf'
+          path: 'docs/Delta.pdf'
 
