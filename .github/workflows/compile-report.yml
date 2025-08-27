@@ -1,0 +1,63 @@
+# GitHub Action for Compiling LaTeX Document
+#
+# This workflow will be triggered on every push to the 'main' branch.
+# It checks out the repository's code, compiles the specified LaTeX file,
+# and then uploads the resulting PDF as a build artifact.
+
+name: Compile LaTeX Report
+
+# Controls when the workflow will run
+on:
+  # Triggers the workflow on push events but only for the main branch
+  push:
+    branches: [ main ]
+
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+# A workflow run is made up of one or more jobs that can run sequentially or in parallel
+jobs:
+  # This workflow contains a single job called "build_latex"
+  build_latex:
+    # The type of runner that the job will run on
+    runs-on: ubuntu-latest
+
+    # Steps represent a sequence of tasks that will be executed as part of the job
+    steps:
+      # Step 1: Check out the repository's code
+      # This action checks-out your repository under $GITHUB_WORKSPACE, so your job can access it.
+      - name: Set up Git repository
+        uses: actions/checkout@v4
+
+      # Step 2: Compile the LaTeX document
+      # This uses a popular and robust action specifically for LaTeX.
+      - name: Compile LaTeX document
+        uses: xu-cheng/latex-action@v3
+        with:
+          # The root LaTeX file to be compiled.
+          root_file: 'docs/Report/Delta.tex'
+          
+          # The working directory for the compilation, if your .tex files are in a subdirectory.
+          # For example, if your files are in a 'source' folder, you would uncomment the next line:
+          # working_directory: 'source/'
+
+          # The compiler to use. Common options are 'pdflatex', 'xelatex', 'lualatex'.
+          # 'pdflatex' is a good default for most projects.
+          compiler: 'pdflatex'
+
+          # Arguments to pass to the compiler.
+          # For example, you might need '-shell-escape' if you use packages like 'minted'.
+          # args: '-shell-escape'
+
+      # Step 3: Upload the generated PDF as an artifact
+      # This makes the compiled PDF available for download from the workflow's summary page.
+      - name: Upload PDF artifact
+        uses: actions/upload-artifact@v4
+        with:
+          # The name of the artifact as it will appear in the GitHub UI.
+          # You can name this whatever you like.
+          name: AI-Project-Report
+          
+          # The path to the file(s) to upload.
+          path: 'docs/DeltaReport.pdf'
+

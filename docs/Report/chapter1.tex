@@ -1,0 +1,100 @@
+\chapter{Project Definition}
+\label{chap:project_definition}
+
+
+
+\section{Introduction}
+\label{sec:intro}
+
+Monocular depth estimation is a crucial and challenging task in the field of computer vision, with important applications in augmented reality (AR), virtual reality (VR), and autonomous navigation. However, state-of-the-art models, such as MiDaS, often come with high computational costs, making them unsuitable for deployment on resource-constrained devices like mobile phones.
+
+This project addresses this gap by employing a powerful technique known as \textbf{Knowledge Distillation}. This method allows us to transfer the "knowledge" from a large, high-performance "teacher" model to a smaller, more efficient "student" model. The goal of this project is to develop a lightweight and fast depth estimation model that maintains a high level of quality, making near real-time application on mobile devices feasible.
+
+\section{Project Goal}
+\label{sec:project_goal}
+
+The primary goal of this project is to apply knowledge distillation techniques to develop a high-quality, near real-time monocular depth estimation model that can be run efficiently on mobile devices. This is broken down into the following objectives.
+
+\begin{enumerate}
+    \item \textbf{Design and Develop a Student Model:} Create a lightweight model with an architecture optimized for mobile hardware.
+    
+    \item \textbf{Train using a Teacher Model:} Utilize a state-of-the-art teacher model, specifically \textbf{Depth Anything V2}, to guide the training process of the student model.
+    
+    \item \textbf{Implement a Comprehensive Distillation Strategy:} Implement an integrated knowledge distillation strategy that transfers knowledge at both the pixel and feature levels. This includes using a composite loss function that combines pixel-wise losses (such as L1 and RMSE on depth values) with feature-based losses to ensure a robust transfer of information.
+    
+    \item \textbf{Develop a Proof of Concept (PoC) Application:} Build a mobile application using the Flutter framework to demonstrate the model's performance in a real-world scenario.
+    
+    \item \textbf{Perform Rigorous Performance and Accuracy Evaluation:} To evaluate the student model's performance by measuring its accuracy (using metrics such as Abs Rel and RMSE on the NYU Depth V2 dataset) and comparing it to the teacher's performance, in addition to assessing its computational efficiency (inference time, model size).
+\end{enumerate}
+
+\section{Requirements}
+\label{sec:requirements}
+
+To ensure the achievement of the project's goal—building a Proof of Concept (PoC) that demonstrates the effectiveness of the proposed model on resource-constrained devices—a set of basic requirements has been defined. These requirements focus on the minimum functionalities necessary to showcase the model's capabilities and measure its performance in a real-world operating environment, and they do not aim to build a fully-fledged commercial product.
+
+\subsection{Functional Requirements}
+\label{subsec:functional_reqs}
+
+\begin{itemize}
+   \item \textbf{Image Input:}
+    \begin{itemize}
+        \item The user must be able to capture a new image using the device's camera.
+        \item The user must be able to select an existing image from the device's photo gallery.
+    \end{itemize}
+
+    \item \textbf{Image Processing:}
+    \begin{itemize}
+        \item The system must pass the input image to the AI model built for depth estimation, after processing it to be a suitable input for the model.
+        \item The system must generate a colored Depth Map that represents the distances from the camera in the original image.
+    \end{itemize}
+
+    \item \textbf{Displaying Results:}
+    \begin{itemize}
+        \item The application must display the original image input by the user.
+        \item The application must display the resulting depth map alongside the original image for comparison.
+        \item The application must display the time required to generate the depth map, measured in milliseconds.
+    \end{itemize}
+
+    \item \textbf{Output Management:}
+    \begin{itemize}
+        \item The user must be able to save the resulting depth map to the device's storage.
+    \end{itemize}
+
+    \item \textbf{Live Depth Camera:}
+    \begin{itemize}
+        \item The application must provide a screen to display the depth of the live camera feed.
+    \end{itemize}
+\end{itemize}
+
+\subsection{Non-functional Requirements}
+\label{subsec:non_functional_reqs}
+\begin{itemize}
+    \item \textbf{Performance:}
+    \begin{itemize}
+        \item \textbf{Response Time:} The depth estimation process time (inference time) should not exceed 200 milliseconds on mid-range mobile devices. In the live camera feature, the frame rate should be at least 4 frames per second (although 200 ms makes 5 FPS, this accounts for the additional time required for image pre-processing before inference).
+        \item \textbf{Memory Consumption:} The application's RAM usage should not exceed a certain limit (200 MB) during operation to prevent crashes.
+        \item \textbf{Application Size:} The installation file size (APK/IPA) should be as small as possible (preferably not exceeding 50 MB) to facilitate download and installation.
+    \end{itemize}
+
+    \item \textbf{Accuracy:}
+    \begin{itemize}
+        \item The student model must achieve acceptable accuracy on a test dataset (such as NYU Depth V2), balancing accuracy and performance. The model should aim for an Absolute Relative Error (Abs Rel) of less than 0.5, which, while not achieving competitive performance or high-level 3D scene understanding, is sufficient for navigation applications.
+    \end{itemize}
+
+    \item \textbf{Usability:}
+    \begin{itemize}
+        \item The user interface (UI) should be simple and intuitive, not requiring prior technical knowledge from the user.
+        \item The application should provide clear instructions and feedback to the user (e.g., showing a "Processing..." indicator).
+    \end{itemize}
+
+    \item \textbf{Compatibility:}
+    \begin{itemize}
+        \item The application must work correctly on both Android and iOS operating systems.
+        \item The application must support specific versions of the operating systems (Android 8.0 and above, and iOS 12 and above).
+    \end{itemize}
+\end{itemize}
+
+\section{Project Scope}
+\label{sec:project_scope}
+
+The scope of this project is limited to developing and demonstrating the feasibility of a lightweight depth estimation model through knowledge distillation for a single mobile device as a case study. The scope does not include conducting comprehensive tests on all types of mobile devices, developing a fully-fledged commercial product, or addressing challenging cases such as transparent or reflective surfaces in a specialized manner.

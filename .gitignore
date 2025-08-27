@@ -359,3 +359,19 @@ secrets.json
 app/assets/*.tflite
 app/assets/*.onnx
 
+
+# LaTeX auxiliary files
+*.aux
+*.bbl
+*.blg
+*.lof
+*.log
+*.lot
+*.out
+*.toc
+*.fls
+*.fdb_latexmk
+*.synctex.gz
+
+# Final PDF output
+*.pdf

@@ -1,0 +1,141 @@
+% ===================================================================
+% MAIN FILE
+% COMPILE WITH: XeLaTeX
+% ===================================================================
+
+\documentclass[10pt, a4paper]{report}
+
+
+%---------- PACKAGES ----------
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[margin=1in]{geometry}
+\usepackage{graphicx}
+\usepackage{tabularx}
+\usepackage{ragged2e}
+\usepackage{booktabs}
+\usepackage{caption}
+\usepackage{array}
+\usepackage{siunitx}
+\usepackage{amsmath}
+\usepackage[hidelinks]{hyperref}
+
+\DeclareSIUnit{\fps}{frames~per~second}
+
+\makeatletter
+\newcommand\frontmatter{%
+    \cleardoublepage
+    \pagenumbering{roman}}
+\newcommand\mainmatter{%
+    \cleardoublepage
+    \pagenumbering{arabic}}
+\newcommand\backmatter{%
+  \if@openright
+    \cleardoublepage
+  \else
+    \clearpage
+  \fi
+}
+\makeatother
+
+
+
+\begin{document}
+\frontmatter
+
+%---------- TITLE PAGE ----------
+\begin{titlepage}
+    \centering 
+    \begin{minipage}[t]{1\textwidth}
+        \raggedright 
+        \large
+        Syrian Arab Republic \\
+        Higher Institute for Applied Sciences and Technology (HIAST) \\
+        Department of Information Systems \\
+        Specialization: Software Engineering and Artificial Intelligence \\
+        Academic Year: 2024-2025
+    \end{minipage}
+    
+    \vfill 
+    \includegraphics[width=3cm]{images/HIAST_logo.png} \par
+    
+    
+    \vspace{2cm} 
+    
+    % Main Title
+    {\huge\bfseries Monocular Depth Estimation using \par}
+    {\huge\bfseries Knowledge Distillation Techniques \par}
+    
+    \vspace{1cm}
+    
+    {\Huge\bfseries Delta \par}
+    
+    \vfill 
+    
+    % Author and Supervisor information in a two-column layout
+    \begin{minipage}[t]{0.4\textwidth}
+        \centering
+        \large
+        \textbf{Prepared by:} \\
+        Mays Alkhateeb
+    \end{minipage}%
+    \begin{minipage}[t]{0.4\textwidth}
+        \centering
+        \large
+        \textbf{Supervised by:} \\
+        Dr. Omar Hamdoun
+    \end{minipage}
+    
+    \vfill % Push the date to the bottom
+    
+    % Date
+    \large{09/08/2025}
+
+\end{titlepage}
+
+%---------- Abstract PAGE ----------
+
+\begin{center}
+    \huge\bfseries Abstract
+\end{center}
+\large
+This project addresses the challenge of running computationally intensive monocular depth estimation models on resource-constrained mobile devices. We employ knowledge distillation to create an efficient student model by transferring knowledge from a state-of-the-art teacher model, Depth Anything V2, to a lightweight student model named Delta. A novel student architecture was designed and trained using the PyTorch framework and features a MobileViT-XS encoder, chosen for its ability to efficiently capture global context. This is paired with a custom, lightweight MiniDPT decoder. Training is guided by a composite loss function that combines scale-invariant logarithmic, gradient matching, feature matching, and attention matching losses to ensure a robust transfer of knowledge. The project culminates in a Flutter-based mobile application that successfully demonstrates the near real-time inference capabilities of the optimized student model. Extensive performance and accuracy analysis confirms its viability for practical applications such as augmented reality and navigation assistance.
+
+
+%---------- TOC PAGES ----------
+
+\tableofcontents
+\newpage
+
+
+\listoffigures
+\newpage
+
+\listoftables
+\newpage
+
+%---------- Chapters----------
+\mainmatter
+
+% --- CHAPTER 1 ---
+\input{chapter1.tex}
+% --- CHAPTER 2 ---
+\input{chapter2.tex}
+% --- CHAPTER 3 ---
+\input{chapter3.tex}
+% --- CHAPTER 4 ---
+\input{chapter4.tex}
+% --- CHAPTER 5 ---
+\input{chapter5.tex}
+
+
+%---------- REF PAGE ----------
+\newpage
+
+\bibliographystyle{ieeetr}
+
+\bibliography{references}
+
+
+
+\end{document}
